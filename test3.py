@@ -73,7 +73,11 @@ class mongodata:
         self.BBDD = client.twitter
 
     def insert_many_users (self,  ALLDATA):
-        self.BBDD.users.insert_many(ALLDATA).inserted_ids
+        try:
+            self.BBDD.users.insert_many(ALLDATA, ordered=False).inserted_ids
+        except pymongo.errors.BulkWriteError as e:
+                    #print("Error:{0}").format(e.details['writeErrors'])
+                    print "Error, duplicate data"
 
     def insert_many_friends (self,ALLDATA):
         self.insert_many_users(ALLDATA['ids'])
@@ -158,9 +162,10 @@ class twmac:
                         aux['user']=self.ID
                         aux['friend']=line['id']
                         relationship.append(aux)
+                        line['_id'] = line.pop('id')
                         data.append(line)
                 except twitter.TwitterHTTPError as e:
-                    print("Error:{0}").format(e)
+                    print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
             result['num_friends']=len(query["ids"])-1
             result['ids']=data
             result['friends']=relationship
@@ -207,10 +212,11 @@ class twmac:
                         aux = {}
                         aux['user'] = ID_
                         aux['friend'] = line['id']
+                        line['_id']=line.pop('id')
                         data.append(line)
                         followers_.append(aux)
                 except twitter.TwitterHTTPError as e:
-                    print("Error:{0}").format(e)
+                    print("Error:{0}\n\nUSER ID:{1}\n").format(e,ids)
             result['num_followers']=len(query["ids"])-1
             result['ids']=data
             result['followers'] = followers_
@@ -272,10 +278,13 @@ class twmac:
             api_call = getattr(self.twitter_api.statuses, TIMELINE_NAME + '_timeline')
             tweets = make_twitter_request(self, api_call, **KW)
             for line in tweets:
-                users.append(line['user'])
                 aux=line['user']['id']
+                line['user']['_id'] = line['user'].pop('id')
+                users.append(line['user'])
                 line['user']=aux
+                line['_id']=line.pop('id')
                 data.append(line)
+
             cont=cont+len(tweets)
             page_num += 1
         result['num_tweets'] = cont

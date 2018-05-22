@@ -74,7 +74,7 @@ class mongodata:
 
     def insert_many_users (self,  ALLDATA):
         self.BBDD.users.insert_many(ALLDATA).inserted_ids
-        self.BBDD.users.create_index([('id', pymongo.TEXT)], name='title', default_language='english')
+        #self.BBDD.users.create_index([('id', pymongo.TEXT)], name='title', default_language='english')
 
     def insert_many_friends (self,ALLDATA):
         self.insert_many_users(ALLDATA['ids'])
@@ -159,6 +159,7 @@ class twmac:
                         aux['user']=self.ID
                         aux['friend']=line['id']
                         relationship.append(aux)
+                        line['_id'] = line.pop('id')
                         data.append(line)
                 except twitter.TwitterHTTPError as e:
                     print("Error:{0}").format(e)
