@@ -1,3 +1,11 @@
 config/userdata.ini
+config/decisionAPI
 twtr/
 data/
+doc/
+recipies/
+python-twitter-examples/
+Recipes-for-Mining-Twitter-master/
+recipies/
+.idea/
+.DS_Store/
