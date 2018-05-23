@@ -95,8 +95,6 @@ class mongodata:
     def insert_many_trends(self, ALLDATA):
         self.BBDD.trends.insert_many(ALLDATA).inserted_ids
 
-    def insert_many_trends(self, ALLDATA):
-        self.BBDD.trends.insert_many(ALLDATA).inserted_ids
 
     def insert_many_trendAvailable(self, ALLDATA):
         self.BBDD.trendAvailable.insert_many(ALLDATA).inserted_ids
@@ -127,7 +125,7 @@ class twmac:
         access_secret = self.Config.get('secuser', 'access_secret')
         auth = twitter.oauth.OAuth(access_key, access_secret,
                                    consumer_key, consumer_secret)
-        self.twitter_api = twitter.Twitter(auth=auth)
+        self.twitter_api = twitter.Twitter(auth=auth,retry=True)
         aux = self.twitter_api.users.lookup(screen_name=self.Config.get('secuser', 'owner'))
         self.ID= long(aux[0]['id'])
 

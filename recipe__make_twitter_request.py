@@ -15,11 +15,9 @@ def make_twitter_request(t, twitterFunction, max_errors=3, *args, **kwArgs):
     # reset if a rate limiting issue
 
     def handle_http_error(e, t, wait_period=2):
-
         if wait_period > 3600: # Seconds
             print >> sys.stderr, 'Too many retries. Quitting.'
             raise e
-
         if e.e.code == 401:
             print >> sys.stderr, 'Encountered 401 Error (Not Authorized)'
             return None
@@ -29,6 +27,7 @@ def make_twitter_request(t, twitterFunction, max_errors=3, *args, **kwArgs):
             time.sleep(wait_period)
             wait_period *= 1.5
             return wait_period
+        # errores controlados, busca si nos hemos pasado
         elif t.account.rate_limit_status()['remaining_hits'] == 0:
             status = t.account.rate_limit_status()
             now = time.time()  # UTC
