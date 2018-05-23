@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# encoding=utf8
 import os, re
 import twitter
 import json, csv
@@ -54,6 +55,19 @@ class filedata:
         TWEETS = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix',
                                                                                'tweets') + '_' + self.DATETIME + ".json"
         self.write_(TWEETS, data)
+
+    def user2csv (self, data):
+        u2_c_s_v = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix',
+                                                                               'user2csv') + '_' + self.DATETIME + ".json"
+        f=open(u2_c_s_v,"w")
+        f.write ("_id,screen_name,location,name,followers_count,friends_count,created_at,url,lang,screen_name,retweet_count,verified,listed_count,statuses_count,default_profile,withheld_in_countries,description,time_zone,utc_offset,lang\n")
+        for row in data:
+            f.write (
+                "{_id},'{screen_name}','{location}','{name}',{followers_count},{friends_count},{created_at},'{url}','{lang}','{screen_name}',{retweet_count}, {verified}, {listed_count},{statuses_count}, {default_profile},{withheld_in_countries},'{description}',{time_zone},{utc_offset},'{lang}'".format(
+                    **row))
+            f.write("\n")
+        f.close()
+
 #=======================================================================================================================
 class mongodata:
     ENVCONFIG = "config/env.ini"
@@ -100,16 +114,14 @@ class mongodata:
         self.BBDD.trendAvailable.insert_many(ALLDATA).inserted_ids
 
     def list_users (self):
-        return (list(self.BBDD.users.find({}, {"id": 1, "screen_name": 1, "location": 1, "name": 1, "followers_count": 1,
+        return (list(self.BBDD.users.find({}, {"_id": 1, "screen_name": 1, "location": 1, "name": 1, "followers_count": 1,
                                               "friends_count": 1, "created_at": 1, "url": 1, "lang": 1,
                                               "screen_name": 1, "retweet_count": 1, "verified": 1, "listed_count": 1,
                                               "statuses_count": 1, "default_profile": 1, "withheld_in_countries": 1,
-                                              "_id": 0})))
+                                              "description" :1, "time_zone" :1, "utc_offset":1, "lang":1})))
 
     def get_users_from_tweets(self):
-        return (list(self.BBDD.tweets.find({}, {"id": 1, "user": 1,
-                                              "_id": 0})))
-
+        return (list(self.BBDD.tweets.find({}, {"id": 1, "user": 1})))
 #=======================================================================================================================
 class twmac:
     USERCONFIG = "config/userdata.ini"
@@ -313,7 +325,7 @@ parser.add_argument('--lists',  "-l",  type=str, help='lists of a given user (me
 parser.add_argument('--memberships',  "-m", action='store_true', help='print')
 parser.add_argument('--tweets',  "-w", action='store_true', help='tweets from home')
 parser.add_argument('--tweets_user',  "-u", type=str, help='tweets of a given user (me|screen_name)')
-parser.add_argument('--users_tweets',  "-ut", action='store_true', help='user from tweets')
+parser.add_argument('--user2csv',  "-u2csv", action='store_true', help='data user to analyze')
 parser.add_argument('--test',  "-test", action='store_true', help='print')
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -373,10 +385,12 @@ elif args.followers or args.other_follower:
         mngdb.insert_many_followers(followers)
     else:
         print (json.dumps(followers, indent=1))
-elif args.test:
+elif args.user2csv:
     mngdb = mongodata()
     myself = mngdb.list_users()
-    print myself[0].keys()
+    if not args.print_:
+        print myself[0].keys()
+    users=[]
     for row in myself:
         try:
             if not row["retweet_count"] or row["withheld_in_countries"]:
@@ -384,10 +398,26 @@ elif args.test:
         except:
             row["retweet_count"] = 0
             row["withheld_in_countries"] = 0
-        print ("{id},{screen_name},{location},{name},{followers_count},{friends_count},\
-        {created_at},{url},{lang},{screen_name},{retweet_count}, {verified}, {listed_count},\
-        {statuses_count}, {default_profile},{withheld_in_countries}".format(**row))
+        rowaux = {}
+        for w in row.keys():
+            if type(row[w]) is unicode:
+                rowaux[w] = row[w].encode('utf-8')
+            elif str(row[w]).isdigit():
+                rowaux[w] = row[w]
+            else:
+                rowaux[w] = row[w]
+        if args.print_:
+            users.append(rowaux)
+        else:
+            print (
+                "{_id},{screen_name},{location},{name},{followers_count},{friends_count},{created_at},{url},{lang},{screen_name},{retweet_count}, {verified}, {listed_count},{statuses_count}, {default_profile},{withheld_in_countries},{description},{time_zone},{utc_offset},{lang}".format(
+                    **rowaux))
 
+    if args.print_:
+        fwrite = filedata()
+        fwrite.user2csv(users)
+elif args.user2csv:
+    print "test"
     #print (json.dumps(myself, indent=1))
 elif args.tweets or args.tweets_user:
     twitt_ = twmac()
@@ -412,9 +442,3 @@ elif args.tweets or args.tweets_user:
             fwrite.users(json.dumps(tweets['users'], indent=1))
     else:
         print (json.dumps(tweets, indent=1))
-
-elif args.users_tweets:
-    mngdb = mongodata()
-    tweets = mngdb.get_users_from_tweets()
-    for i in tweets:
-        print ("{1}->{0}").format(i['id'],i['user']['id'])
