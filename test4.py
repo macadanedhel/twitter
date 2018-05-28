@@ -9,6 +9,9 @@ import parser
 import argparse
 import datetime, time
 import pymongo
+from py2neo import authenticate, Graph, Node, Relationship
+
+
 from recipe__make_twitter_request import make_twitter_request
 
 # En el mongo voy a montar distintas colecciones, unas de catalogo y otras de relacion
@@ -58,7 +61,7 @@ class filedata:
 
     def user2csv (self, data):
         u2_c_s_v = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix',
-                                                                               'user2csv') + '_' + self.DATETIME + ".json"
+                                                                               'user2csv') + '_' + self.DATETIME + ".csv"
         f=open(u2_c_s_v,"w")
         f.write ("_id,screen_name,location,name,followers_count,friends_count,created_at,url,lang,screen_name,retweet_count,verified,listed_count,statuses_count,default_profile,withheld_in_countries,description,time_zone,utc_offset,lang\n")
         for row in data:
@@ -67,6 +70,83 @@ class filedata:
                     **row))
             f.write("\n")
         f.close()
+
+    def data2neo (self, users, followers, friends):
+        filenameU =  self.EnvConfig.get('neo4j','userfile') + '_' + self.DATETIME + ".csv"
+        u2l = self.EnvConfig.get('neo4j', 'datapath') + '/' + filenameU
+        f = open(u2l, "w")
+
+        filenameG = self.EnvConfig.get('neo4j','lang') + '_' + self.DATETIME + ".csv"
+        l2_c_s_v = self.EnvConfig.get('neo4j', 'datapath') + '/'  +filenameG
+        ff = open(l2_c_s_v, "w")
+
+        filenameL = self.EnvConfig.get('neo4j','location') + '_' + self.DATETIME + ".csv"
+        tz2_csv = self.EnvConfig.get('neo4j', 'datapath') + '/' + filenameL
+        fff = open(tz2_csv, "w")
+
+        filenameF = self.EnvConfig.get('neo4j', 'followers') + '_' + self.DATETIME + ".csv"
+        f2_csv = self.EnvConfig.get('neo4j', 'datapath') + '/' + filenameF
+        ffff = open(f2_csv, "w")
+
+        filenameR = self.EnvConfig.get('neo4j', 'friends') + '_' + self.DATETIME + ".csv"
+        r2_csv = self.EnvConfig.get('neo4j', 'datapath') + '/' + filenameR
+        fffff = open(r2_csv, "w")
+
+
+        files={'user':u2l,'lang':l2_c_s_v,'location':tz2_csv,'followers':f2_csv,'friends':r2_csv,
+               'remote_user': self.EnvConfig.get('neo4j','remotepath') + '/' + filenameU,
+               'remote_lang': self.EnvConfig.get('neo4j', 'remotepath') + '/' + filenameG,
+               'remote_location': self.EnvConfig.get('neo4j', 'remotepath') + '/' + filenameL,
+               'remote_followers': self.EnvConfig.get('neo4j', 'remotepath') + '/' + filenameF,
+               'remote_friends': self.EnvConfig.get('neo4j', 'remotepath') + '/' + filenameR
+               }
+
+        userkeys = (self.EnvConfig.get('neo4j','user_key'))
+        langkeys = (self.EnvConfig.get('neo4j', 'lang_key'))
+        locationkeys = (self.EnvConfig.get('neo4j', 'location_key'))
+        followerskey = (self.EnvConfig.get('neo4j', 'followers_key'))
+        friendskey = (self.EnvConfig.get('neo4j', 'friends_key'))
+
+        f.write("_id,")
+        ff.write("_id,")
+        fff.write("_id,")
+
+        f.write( userkeys )
+        ff.write( langkeys )
+        fff.write( locationkeys )
+        ffff.write(followerskey)
+        fffff.write(friendskey)
+
+        f.write( "\n" )
+        ff.write( "\n" )
+        fff.write( "\n" )
+        ffff.write( "\n" )
+        fffff.write( "\n" )
+
+        userkeys=userkeys.split(',')
+        langkeys = langkeys.split(',')
+        locationkeys = locationkeys.split(',')
+        followerskey = followerskey.split(',')
+        friendskey = friendskey.split(',')
+
+        for i in followers:
+            ffff.write( "{0},{1}\n".format(i[0],i[1]) )
+        for i in friends:
+            fffff.write("{0},{1}\n".format(i[0], i[1]) )
+        for i in users:
+            #user
+            key = i.keys()[0]
+            f.write( "{0},{1},{2},{3},{4}\n".format(key,i[key][0][userkeys[0]],i[key][0][userkeys[1]],i[key][0][userkeys[2]],
+                                           i[key][0][userkeys[3]]) )
+            ff.write( "{0},{1}\n".format(key,i[key][1][langkeys[0]]) )
+            if i[key][2][locationkeys[2]] <> '':
+                fff.write( "{0},{1},{2},{3}\n".format(key,i[key][2][locationkeys[0]],i[key][2][locationkeys[1]],i[key][2][locationkeys[2]]) )
+        f.close()
+        ff.close()
+        fff.close()
+        ffff.close()
+        fffff.close()
+        return(files)
 
 #=======================================================================================================================
 class mongodata:
@@ -116,12 +196,27 @@ class mongodata:
     def list_users (self):
         return (list(self.BBDD.users.find({}, {"_id": 1, "screen_name": 1, "location": 1, "name": 1, "followers_count": 1,
                                               "friends_count": 1, "created_at": 1, "url": 1, "lang": 1,
-                                              "screen_name": 1, "retweet_count": 1, "verified": 1, "listed_count": 1,
+                                              "retweet_count": 1, "verified": 1, "listed_count": 1,
                                               "statuses_count": 1, "default_profile": 1, "withheld_in_countries": 1,
-                                              "description" :1, "time_zone" :1, "utc_offset":1, "lang":1})))
+                                              "description" :1, "time_zone" :1, "utc_offset":1})))
+    def data2neo  (self):
+        return (list(self.BBDD.users.find({}, {"_id": 1, "screen_name": 1, "location": 1, "name": 1, "lang": 1,
+                                              "verified": 1,  "default_profile":1, "time_zone" :1, "utc_offset":1 })))
 
     def get_users_from_tweets(self):
         return (list(self.BBDD.tweets.find({}, {"id": 1, "user": 1})))
+
+    def get_users (self):
+        return (list(self.BBDD.users.find({}, {"_id": 1, "screen_name": 1})))
+
+    def get_relationship(self, relation):
+        if relation == 'friends':
+            return (list(self.BBDD.friends.find({}, {"_id": 0, "friend": 1, "user":1})))
+        elif relation == 'followers':
+            return (list(self.BBDD.followers.find({}, {"_id": 0, "friend": 1, "user": 1})))
+        else:
+            print "ERROR: No relationship"
+
 #=======================================================================================================================
 class twmac:
     USERCONFIG = "config/userdata.ini"
@@ -326,6 +421,7 @@ parser.add_argument('--memberships',  "-m", action='store_true', help='print')
 parser.add_argument('--tweets',  "-w", action='store_true', help='tweets from home')
 parser.add_argument('--tweets_user',  "-u", type=str, help='tweets of a given user (me|screen_name)')
 parser.add_argument('--user2csv',  "-u2csv", action='store_true', help='data user to analyze')
+parser.add_argument('--data2neo',  "-d2neo", action='store_true', help='data to graph creation')
 parser.add_argument('--test',  "-test", action='store_true', help='print')
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -416,9 +512,6 @@ elif args.user2csv:
     if args.print_:
         fwrite = filedata()
         fwrite.user2csv(users)
-elif args.user2csv:
-    print "test"
-    #print (json.dumps(myself, indent=1))
 elif args.tweets or args.tweets_user:
     twitt_ = twmac()
     if args.tweets:
@@ -442,3 +535,142 @@ elif args.tweets or args.tweets_user:
             fwrite.users(json.dumps(tweets['users'], indent=1))
     else:
         print (json.dumps(tweets, indent=1))
+elif args.test:
+    print "test"
+
+
+elif args.data2neo:
+    mngdb = mongodata()
+    myself = mngdb.data2neo()
+    if not args.print_:
+        print myself[0].keys()
+    users=[]
+    followers=[]
+    friends=[]
+    for row in myself:
+        tmp={}
+        try:
+            if not row["retweet_count"] or row["withheld_in_countries"]:
+                row["retweet_count"]=0
+        except:
+            row["retweet_count"] = 0
+            row["withheld_in_countries"] = 0
+        rowaux = {}
+        for w in row.keys():
+            if type(row[w]) is unicode:
+                rowaux[w] = row[w].encode('utf-8')
+            elif str(row[w]).isdigit():
+                rowaux[w] = row[w]
+            else:
+                rowaux[w] = row[w]
+        t = {str(rowaux["_id"]): [
+            {'screen_name': rowaux["screen_name"], 'name': rowaux["name"], 'verified': rowaux["verified"],
+             "default_profile": rowaux["default_profile"]}, {'lang': rowaux["lang"]},
+            {'location': rowaux["location"], 'time_zone': rowaux["time_zone"], 'utc_offset': rowaux["utc_offset"]}]}
+        if args.print_:
+            users.append(t)
+        else:
+            print (t)
+
+    relation = mngdb.get_relationship('followers')
+    for i in relation:
+        if args.print_:
+            followers.append([i['friend'], i['user']])
+        else:
+            print ("{0},{1}").format(i['friend'], i['user'])
+
+
+    relation = mngdb.get_relationship('friends')
+    for i in relation:
+        if args.print_:
+            friends.append([i['user'], i['friend']])
+        else:
+            print ("{0},{1}").format(i['user'], i['friend'])
+
+
+
+
+    if args.print_:
+        fwrite = filedata()
+        files=fwrite.data2neo(users,followers,friends)
+        ENVCONFIG = "config/env.ini"
+        EnvConfig = ConfigParser.ConfigParser()
+        Config = ConfigParser.ConfigParser()
+        EnvConfig.read(ENVCONFIG)
+
+        g = Graph(host=EnvConfig.get('neo4j', 'ip'),
+                  user=EnvConfig.get('neo4j', 'user'),
+                  password=EnvConfig.get('neo4j', 'password'),
+                  bolt=False,
+                  secure=False,
+                  bolt_port=int(EnvConfig.get('neo4j', 'bolt')),
+                  http_port=int(EnvConfig.get('neo4j', 'http')),
+                  https_port=int(EnvConfig.get('neo4j', 'https'))
+                  )
+
+        query = """
+                 USING PERIODIC COMMIT
+                 LOAD CSV WITH HEADERS FROM "file:///{0}" AS userline 
+                 CREATE (:User {{ _id: userline._id, verified: userline.verified,
+                 screen_name: userline.screen_name, default_profile: userline.default_profile,
+                 name: userline.name }} )
+                 
+                 """.format(files['remote_user'])
+
+        g.run(query)
+        g.run("CREATE INDEX ON :User(_id)")
+        print ("File {0} loaded !!!").format(files['user'])
+        os.remove(files['user'])
+        print ("\tFile {0} removed !!!\n").format(files['user'])
+
+
+        query = """
+                 USING PERIODIC COMMIT
+                 LOAD CSV WITH HEADERS FROM "file:///{0}" AS langline 
+                 CREATE (:Language {{ _id: langline._id, name:  langline.lang }} )
+
+                 """.format( files['remote_lang'] )
+
+        g.run(query)
+        g.run("CREATE INDEX ON :Language(_id)")
+        print ("File {0} loaded !!!").format(files['lang'])
+        os.remove(files['lang'])
+        print ("\tFile {0} removed !!!\n").format(files['lang'])
+
+
+        query = """
+                 USING PERIODIC COMMIT
+                 LOAD CSV WITH HEADERS FROM "file:///{0}" AS locline
+                 CREATE (:Location {{ name : locline.location, time_zone: locline.time_zone, utc_offset: locline.utc_offset }} )
+                 
+                 """.format( files['remote_location'])
+        g.run("CREATE INDEX ON :Location(name)")
+        g.run(query)
+        print ("File {0} loaded !!!").format(files['location'])
+        os.remove(files['location'])
+        print ("\tFile {0} removed !!!\n").format(files['location'])
+
+        query = """
+                         LOAD CSV WITH HEADERS FROM "file:///{0}" AS row
+                         MATCH (user:User {{ _id: row.user  }} )
+                         MATCH (friend:User {{ _id: row.friend }} )
+                         MERGE (user)-[:ISFRIEND]->(friend)
+
+                         """.format(files['remote_friends'])
+        g.run(query)
+        print ("File {0} loaded !!!").format(files['friends'])
+        os.remove(files['friends'])
+        print ("\tFile {0} removed !!!\n").format(files['friends'])
+
+        query = """
+                                 LOAD CSV WITH HEADERS FROM "file:///{0}" AS row
+                                 MATCH (user:User {{ _id: row.user  }} )
+                                 MATCH (friend:User {{ _id: row.friend }} )
+                                 MERGE (friend)-[:ISFOLLOWER]->(user)
+
+                                 """.format(files['remote_followers'])
+        g.run(query)
+        print ("File {0} loaded !!!").format(files['followers'])
+        os.remove(files['followers'])
+        print ("\tFile {0} removed !!!\n").format(files['followers'])
+

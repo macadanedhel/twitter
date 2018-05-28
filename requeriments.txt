@@ -3,3 +3,4 @@ configparser==3.5.0
 python-dateutil==2.6.1
 pymongo==3.6.1
 urllib3==1.22
+py2neo-3.1.2
