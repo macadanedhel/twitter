@@ -2,15 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c41f6555-86bd-4529-8b32-51e5d963f838" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/twitter.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/twitter.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/env.ini" beforeDir="false" afterPath="$PROJECT_DIR$/config/env.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/recipe__make_twitter_request.py" beforeDir="false" afterPath="$PROJECT_DIR$/recipe__make_twitter_request.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test3.py" beforeDir="false" afterPath="$PROJECT_DIR$/test3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test4.py" beforeDir="false" afterPath="$PROJECT_DIR$/test4.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
-    <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -54,48 +50,20 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="test3.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/test3.py">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/config/env.ini">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-14">
-              <caret line="127" column="63" selection-start-line="127" selection-start-column="63" selection-end-line="127" selection-end-column="63" />
-              <folding>
-                <element signature="e#42#55#0" expanded="true" />
-                <element signature="e#581#2415#0" />
-                <element signature="e#6660#8111#0" />
-                <element signature="e#8273#8481#0" />
-                <element signature="e#8649#8851#0" />
-                <element signature="e#9017#10492#0" />
-                <element signature="e#10643#10732#0" />
-                <element signature="e#15767#16097#0" />
-                <element signature="e#16128#16481#0" />
-                <element signature="e#16526#16858#0" />
-                <element signature="e#16880#16973#0" />
-                <element signature="e#17001#17050#0" />
-                <element signature="e#17099#17507#0" />
-                <element signature="e#17528#18162#0" />
-              </folding>
+            <state relative-caret-position="420">
+              <caret line="28" column="12" selection-start-line="28" selection-start-column="12" selection-end-line="28" selection-end-column="12" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="recipe__make_twitter_request.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/recipe__make_twitter_request.py">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/test4.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="36">
-              <caret line="14" column="14" lean-forward="true" selection-start-line="14" selection-start-column="14" selection-end-line="14" selection-end-column="14" />
-              <folding>
-                <element signature="e#25#35#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test2.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test2.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-532">
-              <caret line="76" column="9" selection-start-line="76" selection-start-column="9" selection-end-line="76" selection-end-column="9" />
+            <state relative-caret-position="184">
+              <caret line="617" column="8" selection-start-line="617" selection-start-column="8" selection-end-line="617" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -160,9 +128,10 @@
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/test2.py" />
         <option value="$PROJECT_DIR$/config/userdata.ini" />
-        <option value="$PROJECT_DIR$/config/env.ini" />
         <option value="$PROJECT_DIR$/recipe__make_twitter_request.py" />
         <option value="$PROJECT_DIR$/test3.py" />
+        <option value="$PROJECT_DIR$/config/env.ini" />
+        <option value="$PROJECT_DIR$/test4.py" />
       </list>
     </option>
   </component>
@@ -176,6 +145,17 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope">
+        <subPane subId="Problems">
+          <expand>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="twitter" type="cbb8eebc:String" user="twitter" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -188,16 +168,10 @@
               <item name="twitter" type="462c0819:PsiDirectoryNode" />
               <item name="config" type="462c0819:PsiDirectoryNode" />
             </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-      <pane id="Scope">
-        <subPane subId="Problems">
-          <expand>
             <path>
-              <item name="Root" type="cbb8eebc:String" user="Root" />
-              <item name="twitter" type="cbb8eebc:String" user="twitter" />
+              <item name="twitter" type="b2602c69:ProjectViewProjectNode" />
+              <item name="twitter" type="462c0819:PsiDirectoryNode" />
+              <item name="data" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -256,6 +230,7 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
+      <method v="2" />
     </configuration>
     <configuration name="demo_numpy" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="twitter" />
@@ -274,6 +249,7 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
+      <method v="2" />
     </configuration>
     <configuration name="demo_sklearn" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="twitter" />
@@ -292,6 +268,7 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
+      <method v="2" />
     </configuration>
     <configuration name="tweet.v.1.0" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="twitter" />
@@ -310,6 +287,7 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
+      <method v="2" />
     </configuration>
     <list>
       <item itemvalue="Python.tweet.v.1.0" />
@@ -355,57 +333,57 @@
     <frame x="0" y="0" width="1680" height="1050" extended-state="0" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.8951613" visible="true" weight="0.2435202" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info id="Compare Directories" order="2" />
-      <window_info anchor="bottom" id="Regex Tester" order="13" />
-      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.1056394" side_tool="true" weight="0.4680851" />
-      <window_info anchor="bottom" id="Version Control" order="7" sideWeight="0.4873016" weight="0.32852808" />
-      <window_info anchor="bottom" id="Python Console" order="12" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4873016" weight="0.48710167" />
       <window_info id="Structure" order="1" sideWeight="0.10483871" side_tool="true" weight="0.25648585" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="10" sideWeight="0.8943606" visible="true" weight="0.42564103" />
-      <window_info id="Favorites" order="2" sideWeight="0.09811828" side_tool="true" weight="0.2989547" />
+      <window_info id="Compare Directories" order="2" />
+      <window_info id="Favorites" order="3" sideWeight="0.09811828" side_tool="true" weight="0.2989547" />
+      <window_info id="DB Browser" order="4" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4873016" weight="0.48710167" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
-      <window_info anchor="bottom" id="DB Execution Console" order="11" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" sideWeight="0.4873016" weight="0.32852808" />
+      <window_info anchor="bottom" id="Graph Database Console" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.1056394" side_tool="true" weight="0.4680851" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="10" sideWeight="0.8943606" visible="true" weight="0.74489796" />
+      <window_info anchor="bottom" id="DB Execution Console" order="11" />
+      <window_info anchor="bottom" id="Python Console" order="12" />
+      <window_info anchor="bottom" id="Regex Tester" order="13" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info id="DB Browser" order="2" />
-      <window_info anchor="bottom" id="Graph Database Console" order="8" />
-      <window_info anchor="right" id="ReST Console" order="5" weight="0.0" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Graph Database" order="3" weight="0.32911393" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="right" id="Data View" order="4" />
+      <window_info anchor="right" id="ReST Console" order="5" weight="0.0" />
     </layout>
     <layout-to-restore>
-      <window_info anchor="bottom" id="DB Execution Console" order="11" />
-      <window_info anchor="right" id="Graph Database" order="3" weight="0.32961673" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4873016" weight="0.48710167" />
-      <window_info id="Compare Directories" order="3" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.8951613" visible="true" weight="0.25648585" />
       <window_info id="Structure" order="1" sideWeight="0.10483871" side_tool="true" visible="true" weight="0.25648585" />
-      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="bottom" id="TODO" order="6" />
       <window_info id="DB Browser" order="2" />
+      <window_info id="Compare Directories" order="3" />
+      <window_info id="Favorites" order="4" sideWeight="0.09811828" side_tool="true" weight="0.2989547" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4873016" weight="0.48710167" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" sideWeight="0.4873016" weight="0.32852808" />
       <window_info anchor="bottom" id="Graph Database Console" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.10443491" side_tool="true" weight="0.38449848" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="10" sideWeight="0.8955651" visible="true" weight="0.43465045" />
+      <window_info anchor="bottom" id="DB Execution Console" order="11" />
       <window_info anchor="bottom" id="Python Console" order="12" />
       <window_info anchor="bottom" id="Regex Tester" order="13" />
-      <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="right" id="ReST Console" order="5" weight="0.0" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="10" sideWeight="0.8955651" visible="true" weight="0.43465045" />
-      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.10443491" side_tool="true" weight="0.38449848" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Version Control" order="7" sideWeight="0.4873016" weight="0.32852808" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="right" id="Graph Database" order="3" weight="0.32961673" />
       <window_info anchor="right" id="Data View" order="4" />
-      <window_info id="Favorites" order="4" sideWeight="0.09811828" side_tool="true" weight="0.2989547" />
+      <window_info anchor="right" id="ReST Console" order="5" weight="0.0" />
     </layout-to-restore>
   </component>
   <component name="UnknownFeatures">
@@ -424,8 +402,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/demo_plot.png" />
-    <entry file="file://$PROJECT_DIR$/data/trends_2017-03-24T00:15:34.141171" />
     <entry file="file://$PROJECT_DIR$/../../Python/twitter/python-twitter-examples/test.2.0.py" />
     <entry file="file://$PROJECT_DIR$/../../Python/twitter/Recipes-for-Mining-Twitter-master/recipe__get_trending_topics.py" />
     <entry file="file://$PROJECT_DIR$/recipies/Recipes-for-Mining-Twitter-master/recipe__trending_topics_time_series.py" />
@@ -467,13 +443,6 @@
     <entry file="file://$PROJECT_DIR$/python-twitter-examples/README.md" />
     <entry file="file://$PROJECT_DIR$/recipies/tinfoleak.py" />
     <entry file="file://$PROJECT_DIR$/README.md" />
-    <entry file="file://$PROJECT_DIR$/config/env.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="10" column="17" selection-start-line="10" selection-start-column="17" selection-end-line="10" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
@@ -500,41 +469,41 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/test2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-532">
+        <state relative-caret-position="1020">
           <caret line="76" column="9" selection-start-line="76" selection-start-column="9" selection-end-line="76" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="127" column="40" selection-start-line="127" selection-start-column="40" selection-end-line="127" selection-end-column="40" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/recipe__make_twitter_request.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="36">
-          <caret line="14" column="14" lean-forward="true" selection-start-line="14" selection-start-column="14" selection-end-line="14" selection-end-column="14" />
-          <folding>
-            <element signature="e#25#35#0" expanded="true" />
-          </folding>
+          <caret line="14" column="14" selection-start-line="14" selection-start-column="14" selection-end-line="14" selection-end-column="14" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test3.py">
+    <entry file="file://$PROJECT_DIR$/config/neo4j.conf">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-14">
-          <caret line="127" column="63" selection-start-line="127" selection-start-column="63" selection-end-line="127" selection-end-column="63" />
-          <folding>
-            <element signature="e#42#55#0" expanded="true" />
-            <element signature="e#581#2415#0" />
-            <element signature="e#6660#8111#0" />
-            <element signature="e#8273#8481#0" />
-            <element signature="e#8649#8851#0" />
-            <element signature="e#9017#10492#0" />
-            <element signature="e#10643#10732#0" />
-            <element signature="e#15767#16097#0" />
-            <element signature="e#16128#16481#0" />
-            <element signature="e#16526#16858#0" />
-            <element signature="e#16880#16973#0" />
-            <element signature="e#17001#17050#0" />
-            <element signature="e#17099#17507#0" />
-            <element signature="e#17528#18162#0" />
-          </folding>
+        <state relative-caret-position="-4500" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config/env.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="28" column="12" selection-start-line="28" selection-start-column="12" selection-end-line="28" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test4.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="184">
+          <caret line="617" column="8" selection-start-line="617" selection-start-column="8" selection-end-line="617" selection-end-column="8" />
         </state>
       </provider>
     </entry>

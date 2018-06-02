@@ -299,7 +299,6 @@ class twmac:
             query = self.twitter_api.followers.ids(screen_name=self.Config.get('secuser', 'owner'))
             ID_ = self.ID
         else :
-            print 2
             query = self.twitter_api.followers.ids(screen_name=user)
             aux = self.twitter_api.users.lookup(screen_name=user)
             ID_ = long(aux[0]['id'])
@@ -616,7 +615,6 @@ elif args.data2neo:
                  name: userline.name }} )
                  
                  """.format(files['remote_user'])
-
         g.run(query)
         g.run("CREATE INDEX ON :User(_id)")
         print ("File {0} loaded !!!").format(files['user'])
