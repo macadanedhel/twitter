@@ -20,7 +20,7 @@ from recipe__make_twitter_request import make_twitter_request
 # La colección friends tendrá dos campos user, friend y el valor será el id
 # la coleccion followers tendrá dos campos user, follower y el valor será el id
 
-
+#=======================================================================================================================
 class filedata:
     ENVCONFIG = "config/env.ini"
     EnvConfig = ConfigParser.ConfigParser()
@@ -32,13 +32,11 @@ class filedata:
         self.EnvConfig = ConfigParser.ConfigParser()
         self.EnvConfig.read(self.ENVCONFIG)
         self.DATETIME = str(datetime.datetime.isoformat(datetime.datetime.now()))
-
     def write_ (self, file_, data):
         #print ("output:{0}").format(file_)
         f = open(file_, 'w')
         f.write(data)
         f.close()
-
     def trends (self, data):
         TRENDS = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix', 'trends') + '_' + self.DATETIME + ".json"
         self.write_( TRENDS, data )
@@ -58,7 +56,10 @@ class filedata:
         TWEETS = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix',
                                                                                'tweets') + '_' + self.DATETIME + ".json"
         self.write_(TWEETS, data)
-
+    def users(self, data):
+        USERS = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix',
+                                                                               'users') + '_' + self.DATETIME + ".json"
+        self.write_(USERS, data)
     def user2csv (self, data):
         u2_c_s_v = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix',
                                                                                'user2csv') + '_' + self.DATETIME + ".csv"
@@ -70,7 +71,6 @@ class filedata:
                     **row))
             f.write("\n")
         f.close()
-
     def data2neo (self, users, followers, friends):
         filenameU =  self.EnvConfig.get('neo4j','userfile') + '_' + self.DATETIME + ".csv"
         u2l = self.EnvConfig.get('neo4j', 'datapath') + '/' + filenameU
@@ -147,7 +147,6 @@ class filedata:
         ffff.close()
         fffff.close()
         return(files)
-
 #=======================================================================================================================
 class mongodata:
     ENVCONFIG = "config/env.ini"
@@ -184,7 +183,10 @@ class mongodata:
         #cpeddbb.twitter.friends.create_index([('title', pymongo.TEXT)], name='title', default_language='english')
     def insert_many_tweets (self,ALLDATA):
         self.insert_many_users(ALLDATA['users'])
-        self.BBDD.tweets.insert_many(ALLDATA['tweets']).inserted_ids
+        try:
+            self.BBDD.tweets.insert_many(ALLDATA['tweets']).inserted_ids
+        except self.BBDD.tweets.BulkWriteError as exc:
+            exc.details
 
     def insert_many_trends(self, ALLDATA):
         self.BBDD.trends.insert_many(ALLDATA).inserted_ids
@@ -216,7 +218,6 @@ class mongodata:
             return (list(self.BBDD.followers.find({}, {"_id": 0, "friend": 1, "user": 1})))
         else:
             print "ERROR: No relationship"
-
 #=======================================================================================================================
 class twmac:
     USERCONFIG = "config/userdata.ini"
@@ -299,7 +300,6 @@ class twmac:
             query = self.twitter_api.followers.ids(screen_name=self.Config.get('secuser', 'owner'))
             ID_ = self.ID
         else :
-            print 2
             query = self.twitter_api.followers.ids(screen_name=user)
             aux = self.twitter_api.users.lookup(screen_name=user)
             ID_ = long(aux[0]['id'])
@@ -387,7 +387,7 @@ class twmac:
                 line['user']['_id'] = line['user'].pop('id')
                 users.append(line['user'])
                 line['user']=aux
-                line['_id']=line.pop('id')
+                #line['_id']=line.pop('id')
                 data.append(line)
 
             cont=cont+len(tweets)
@@ -454,14 +454,17 @@ elif args.friends or args.other_friend:
     twitt_ = twmac()
     some = args.other_friend
     friends = twitt_.friends(some)
-    if args.print_:
+    print ("Friends:{0}").format(friends['num_friends'])
+    if args.print_ and friends['num_friends']:
         fwrite = filedata()
         fwrite.friends(json.dumps(friends, indent=1))
-    elif args.mongodb:
+    elif args.mongodb and friends['num_friends']:
         mngdb = mongodata()
         mngdb.insert_many_friends(friends)
-    else:
+    elif friends['num_friends']:
         print (json.dumps(friends, indent=1))
+    else:
+        print ("{0} Not found !!!\n").format("Friends")
 elif args.lists:
     twitt_ = twmac()
     lists = twitt_.lists(args.lists)
@@ -473,14 +476,17 @@ elif args.followers or args.other_follower:
     twitt_ = twmac()
     some=args.other_follower
     followers = twitt_.followers(some)
+    print ("Followers:{0}").format(followers['num_followers'])
     if args.print_ and followers['num_followers']:
         fwrite = filedata()
         fwrite.followers(json.dumps(followers, indent=1))
     elif args.mongodb and followers['num_followers']:
         mngdb = mongodata()
         mngdb.insert_many_followers(followers)
-    else:
+    elif followers['num_followers']:
         print (json.dumps(followers, indent=1))
+    else:
+        print ("{0} Not found !!!\n").format("Followers")
 elif args.user2csv:
     mngdb = mongodata()
     myself = mngdb.list_users()
@@ -534,7 +540,8 @@ elif args.tweets or args.tweets_user:
             fwrite.tweets(json.dumps(tweets['tweets'], indent=1))
             fwrite.users(json.dumps(tweets['users'], indent=1))
     else:
-        print (json.dumps(tweets, indent=1))
+        print (json.dumps(tweets['tweets'], indent=1))
+        print (json.dumps(tweets['users'], indent=1))
 elif args.test:
     print "test"
 
@@ -616,7 +623,6 @@ elif args.data2neo:
                  name: userline.name }} )
                  
                  """.format(files['remote_user'])
-
         g.run(query)
         g.run("CREATE INDEX ON :User(_id)")
         print ("File {0} loaded !!!").format(files['user'])
