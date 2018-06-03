@@ -182,9 +182,7 @@ class mongodata:
         self.BBDD.followers.insert_many(ALLDATA['followers']).inserted_ids
         #cpeddbb.twitter.friends.create_index([('title', pymongo.TEXT)], name='title', default_language='english')
     def insert_many_tweets (self,ALLDATA):
-        print 1
         self.insert_many_users(ALLDATA['users'])
-        print 2
         try:
             self.BBDD.tweets.insert_many(ALLDATA['tweets']).inserted_ids
         except self.BBDD.tweets.BulkWriteError as exc:
