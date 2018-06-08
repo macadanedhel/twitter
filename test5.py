@@ -228,6 +228,14 @@ class mongodata:
         else:
             result=users[0]['_id']
         return (result)
+    def get_username (self, id):
+        users=list(self.BBDD.users.find({ "id_str" : id } ,{ "_id":0, "name":1, "screen_name":1 } ))
+        if len(users)<1:
+            result=0
+        else:
+            result=users[0]
+        return (result)
+
     def get_tweets_byuserid (self, uid):
         return (self.BBDD.tweets.find({"user": uid}, {"text":1, "_id": 0}))
     def get_userid_regex (self, name):
@@ -240,7 +248,17 @@ class mongodata:
         else:
             result=users
         return (result)
-
+    def get_tweets_users (self):
+        tweets = self.BBDD.tweets.aggregate(
+            [
+                {
+                    "$group": {
+                    "_id": {"user": "$user"},
+                    "count": { "$sum":1}
+                }
+            },
+            { "$sort": {"count": -1}}])
+        return (tweets)
 #=======================================================================================================================
 class twmac:
     USERCONFIG = "config/userdata.ini"
@@ -448,6 +466,9 @@ parser.add_argument('--data2neo',  "-d2neo", action='store_true', help='data to 
 parser.add_argument('--get_userid',  '-n', type=str, help='get userid by name or screen_name')
 parser.add_argument('--get_userid_regex',  '-nr', type=str, help='get userid by name or screen_name but regex based')
 parser.add_argument('--get_tweet_user',  '-gtu', type=str, help='get downloaded tweets by name or screen_name')
+parser.add_argument('--userstweets',  "-ut", action='store_true', help='return number of teewts by user ordered desc')
+parser.add_argument('--get_username',  '-gn', type=str, help='get name or screen_name from userid')
+parser.add_argument('--resolve_na',  '-a', action='store_true', help='resolve name or screen_name from userid')
 parser.add_argument('--test',  "-test", action='store_true', help='print')
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -723,3 +744,20 @@ elif args.get_userid_regex:
         for user in user_id:
             print ("name: {0}\tscreen_name: {1}").format(user['name'].encode('utf-8'),
                                                        user['screen_name'].encode('utf-8'))
+elif args.userstweets:
+    mngdb = mongodata()
+    tweets = mngdb.get_tweets_users()
+    total=0
+    for t in tweets:
+        if args.resolve_na:
+            aux=mngdb.get_username(str(t['_id']['user']))
+            print ("Name:{0}\tscreen_name:{1}\t{2}").format(aux["name"].encode('utf-8'),aux["screen_name"].encode('utf-8'),t['count'])
+        else:
+            print ("User:{0}\t{1}").format(t['_id']['user'], t['count'])
+        total=total+t['count']
+    print("Total tweets {}").format(total)
+
+elif args.get_username:
+    mngdb = mongodata()
+    user = mngdb.get_username(args.get_username)
+    print ("Name:{0}\tscreen_name:{1}").format(user["name"],user["screen_name"])
