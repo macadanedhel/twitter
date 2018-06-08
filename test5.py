@@ -259,6 +259,18 @@ class mongodata:
             },
             { "$sort": {"count": -1}}])
         return (tweets)
+    def get_tweets_db (self, name=None, limit=None):
+        str1=""
+        str2=""
+        if name and limit:
+            result = list(self.BBDD.tweets.find({}, {"text": 1, "user": 1, "lang": 1}).limit(limit))
+        elif name:
+            result = list(self.BBDD.tweets.find({ "name" : name }, {"text": 1, "user": 1, "lang": 1}))
+        elif limit:
+            result=list(self.BBDD.tweets.find({}, {"text": 1, "user": 1, "lang":1}).limit(limit))
+        else:
+            result = list(self.BBDD.tweets.find({str1}, {"text": 1, "user": 1, "lang": 1}).limit(limit))
+        return (result)
 #=======================================================================================================================
 class twmac:
     USERCONFIG = "config/userdata.ini"
@@ -722,8 +734,6 @@ elif args.data2neo:
         print ("File {0} loaded !!!").format(files['followers'])
         os.remove(files['followers'])
         print ("\tFile {0} removed !!!\n").format(files['followers'])
-elif args.test:
-    print "test"
 elif args.get_userid:
     mngdb = mongodata()
     user_id = mngdb.get_userid(args.get_userid)
@@ -756,8 +766,14 @@ elif args.userstweets:
             print ("User:{0}\t{1}").format(t['_id']['user'], t['count'])
         total=total+t['count']
     print("Total tweets {}").format(total)
-
 elif args.get_username:
     mngdb = mongodata()
     user = mngdb.get_username(args.get_username)
     print ("Name:{0}\tscreen_name:{1}").format(user["name"],user["screen_name"])
+elif args.test:
+    mngdb = mongodata()
+    tweet = mngdb.get_tweets_db("",20)
+    for i in tweet:
+        print i['text'].encode('utf-8')
+# elif args.test:
+#     print "test"
