@@ -18,3 +18,5 @@ recipies/
 .idea/misc.xml
 .idea/misc.xml
 .idea/twitter.iml
+/recipe__make_twitter_request.py
+recipe__make_twitter_request.pyc

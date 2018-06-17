@@ -167,7 +167,30 @@ class mongodata:
         port = int(self.EnvConfig.get('mongodb', 'port'))
         client = pymongo.MongoClient(host, port)
         self.BBDD = client.twitter
-
+        args={ "validator": {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["friends_count", "followers_count", "listed_count", "statuses_count", "favourites_count"],
+            "properties": {
+                "friends_count": {
+                    "bsonType": "long"
+                },
+                "followers_count": {
+                    "bsonType": "long"
+                },
+                "listed_count": {
+                    "bsonType": "long"
+                },
+                "statuses_count": {
+                    "bsonType": "long"
+                },
+                "favourites_count": {
+                    "bsonType": "long"
+                }
+            }
+        }}
+        }
+        #self.BBDD.create_collection("users",**args)
     def insert_many_users (self,  ALLDATA):
         try:
             self.BBDD.users.insert_many(ALLDATA, ordered=False).inserted_ids
@@ -299,39 +322,48 @@ class twmac:
 #-----------------------------------------------------------------------------------------------------------------------
     def friends (self,user=None):
         ID_ = ""
+        _FRIENDS = 0
+        NAME_ = ""
+        ID_ = ""
         if not user:
-            query=  self.twitter_api.friends.ids(screen_name = self.Config.get('secuser','owner'))
+            NAME_ = self.Config.get('secuser', 'owner')
             ID_ = self.ID
-        else :
-            query= self.twitter_api.friends.ids(screen_name=user)
-            aux = self.twitter_api.users.lookup(screen_name=user)
-            ID_ = long(aux[0]['id'])
-        data =[]
-        relationship=[]
-        result={}
-        if query["ids"] and len(query["ids"]) > 0:
-            print "found %d friends" % (len(query["ids"]) - 1)
-            cont = 0
-            for n in range(0, len(query["ids"])-1, 100):
-                ids = query["ids"][n:n + 100]
-                try:
-                    subquery = self.twitter_api.users.lookup(user_id = ids)
-                    for line in subquery:
-                        aux = {}
-                        aux['user']=self.ID
-                        aux['friend']=line['id']
-                        relationship.append(aux)
-                        line['_id'] = line.pop('id')
-                        data.append(line)
-                except twitter.TwitterHTTPError as e:
-                    print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
-            result['num_friends']=len(query["ids"])-1
-            result['ids']=data
-            result['friends']=relationship
         else:
-            result['num_friends'] = 0
-            result['ids'] = data
-            result['friends'] = relationship
+            aux = self.twitter_api.users.lookup(screen_name=user)
+            NAME_ = user
+            ID_ = long(aux[0]['id'])
+        data = []
+        relationship = []
+        result = {}
+
+        next_cursor = "-1"
+
+        while (int(next_cursor) != 0):
+            if int(next_cursor) < 0:
+                query = self.twitter_api.friends.ids(screen_name=NAME_)
+            else:
+                query = self.twitter_api.friends.ids(screen_name=NAME_, cursor=next_cursor)
+            next_cursor = query["next_cursor"]
+            if query["ids"] and len(query["ids"]) > 0:
+                _FRIENDS = _FRIENDS + (len(query["ids"]))
+                print ("found {} friends").format(_FRIENDS)
+                for n in range(0, len(query["ids"]) - 1, 100):
+                    ids = query["ids"][n:n + 100]
+                    try:
+                        subquery = self.twitter_api.users.lookup(user_id=ids)
+                        for line in subquery:
+                            aux = {}
+                            aux['user'] = self.ID
+                            aux['friend'] = line['id']
+                            relationship.append(aux)
+                            line['_id'] = line.pop('id')
+                            data.append(line)
+                    except twitter.TwitterHTTPError as e:
+                        print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
+
+        result['num_friends'] = _FRIENDS
+        result['ids'] = data
+        result['friends'] = relationship
         return (result)
 #-----------------------------------------------------------------------------------------------------------------------
     def lists (self,user=None):
@@ -348,44 +380,53 @@ class twmac:
             data= self.twitter_api.lists.memberships(screen_name=user)
 #-----------------------------------------------------------------------------------------------------------------------
     def followers (self,user=None):
-        ID_=""
+        ID_ = ""
+        _FRIENDS = 0
+        NAME_ = ""
+        ID_ = ""
         if not user:
-            query = self.twitter_api.followers.ids(screen_name=self.Config.get('secuser', 'owner'))
+            # query = self.twitter_api.friends.ids(screen_name=self.Config.get('secuser', 'owner'))
+            NAME_ = self.Config.get('secuser', 'owner')
             ID_ = self.ID
-        else :
-            query = self.twitter_api.followers.ids(screen_name=user)
+        else:
+            # query = self.twitter_api.friends.ids(screen_name=user)
             aux = self.twitter_api.users.lookup(screen_name=user)
+            NAME_ = user
             ID_ = long(aux[0]['id'])
         data = []
+        relationship = []
         result = {}
-        followers_ = []
-        if query["ids"] and len(query["ids"])>0:
-            print "found %d followers" % (len(query["ids"])-1)
-            cont = 0
-            for n in range(0, len(query["ids"])-1, 100):
-                ids = query["ids"][n:n + 100]
-                try:
-                    subquery = self.twitter_api.users.lookup(user_id = ids)
-                    for line in subquery:
-                        aux = {}
-                        aux['user'] = ID_
-                        aux['friend'] = line['id']
-                        line['_id']=line.pop('id')
-                        data.append(line)
-                        followers_.append(aux)
-                except twitter.TwitterHTTPError as e:
-                    print("Error:{0}\n\nUSER ID:{1}\n").format(e,ids)
-            result['num_followers']=len(query["ids"])-1
-            result['ids']=data
-            result['followers'] = followers_
-        else:
-            result['num_followers'] = 0
-            result['ids'] = data
-            result['followers'] = followers_
+
+        next_cursor = "-1"
+
+        while (int(next_cursor) != 0):
+            if int(next_cursor) < 0:
+                query = self.twitter_api.followers.ids(screen_name=NAME_)
+            else:
+                query = self.twitter_api.followers.ids(screen_name=NAME_, cursor=next_cursor)
+            next_cursor = query["next_cursor"]
+            if query["ids"] and len(query["ids"]) > 0:
+                _FRIENDS = _FRIENDS + (len(query["ids"]))
+                for n in range(0, len(query["ids"]) - 1, 100):
+                    ids = query["ids"][n:n + 100]
+                    try:
+                        subquery = self.twitter_api.users.lookup(user_id=ids)
+                        for line in subquery:
+                            aux = {}
+                            aux['user'] = self.ID
+                            aux['friend'] = line['id']
+                            relationship.append(aux)
+                            line['_id'] = line.pop('id')
+                            data.append(line)
+                    except twitter.TwitterHTTPError as e:
+                        print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
+
+        result['num_followers'] = _FRIENDS
+        result['ids'] = data
+        result['followers'] = relationship
+        print ("found {} followers").format(_FRIENDS)
         return (result)
 #-----------------------------------------------------------------------------------------------------------------------
-    def test (self):
-        return (self.twitter_api.users.lookup(screen_name = self.Config.get('secuser', 'owner')))
 #-----------------------------------------------------------------------------------------------------------------------
     def get_tweet_timeline(self, user=None, name_=None):
         KW = {  # For the Twitter API call
@@ -482,7 +523,6 @@ parser.add_argument('--userstweets',  "-ut", action='store_true', help='return n
 parser.add_argument('--get_username',  '-gn', type=str, help='get name or screen_name from userid')
 parser.add_argument('--resolve_na',  '-a', action='store_true', help='resolve name or screen_name from userid')
 parser.add_argument('--test',  "-test", action='store_true', help='print')
-
 #-----------------------------------------------------------------------------------------------------------------------
 args = parser.parse_args()
 #-----------------------------------------------------------------------------------------------------------------------
@@ -771,9 +811,7 @@ elif args.get_username:
     user = mngdb.get_username(args.get_username)
     print ("Name:{0}\tscreen_name:{1}").format(user["name"],user["screen_name"])
 elif args.test:
-    mngdb = mongodata()
-    tweet = mngdb.get_tweets_db("",20)
-    for i in tweet:
-        print i['text'].encode('utf-8')
-# elif args.test:
-#     print "test"
+     mngdb = mongodata()
+     tweet = mngdb.get_tweets_db("",100)
+     for i in tweet:
+         print i['text'].encode('utf-8')
