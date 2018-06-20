@@ -10,7 +10,10 @@ import argparse
 import datetime, time
 import pymongo
 from py2neo import authenticate, Graph, Node, Relationship
-
+from langdetect import detect
+from nltk.corpus import stopwords
+import string
+import unicodedata
 
 from recipe__make_twitter_request import make_twitter_request
 
@@ -491,16 +494,71 @@ class twmac:
         result['users'] = users
         return (result)
 #=======================================================================================================================
+class speaking:
+    emoticons_str = r"""
+        (?:
+            [:=;xX][oO\-]?[D\)\]\(\]/\\OpPXx]
+        )"""
+    regex_str = [
+        emoticons_str,
+        r'<[^>]+>',  # HTML tags
+        r'(?:@[\w_]+)',  # @-mentions
+        r"(?:\#+[\w_]+[\w\'_\-]*[\w_]+)",  # hash-tags
+        r'http[s]?://(?:[a-z]|[0-9]|[$-_@.&amp;+]|[!*\(\),]|(?:%[0-9a-f][0-9a-f]))+',  # URLs
+        r'(?:(?:\d+,?)+(?:\.?\d+)?)',  # numbers
+        r"(?:[a-z][a-z'\-_]+[a-z])",  # words with - and '
+        r'(?:[\w_]+)',  # other words
+        r'(?:\S)'  # anything else
+    ]
+    #acento_re=re.compile()
+    tokens_re = re.compile(r'('+'|'.join(regex_str)+')', re.VERBOSE | re.IGNORECASE | re.UNICODE)
+    emoticon_re = re.compile(r'^'+emoticons_str+'$', re.VERBOSE | re.IGNORECASE | re.UNICODE)
+    langvalues=['en','es']
+    gbwords=['rt', 'via', 'RT', 'VIA']
+    languages={'en':'english','es':'spanish'}
+    # -----------------------------------------------------------------------------------------------------------------------
+    def tokenize(self, s):
+        s = unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore')
+        return self.tokens_re.findall(s)
+    # -----------------------------------------------------------------------------------------------------------------------
+    def preprocess(self, s, lowercase=False):
+        # QUITA LOS EMOTIS
+        tokens = self.tokenize(s)
+        if lowercase:
+            tokens = [token.lower() for token in tokens if not self.emoticon_re.search(token) ]
+        return tokens
+    # -----------------------------------------------------------------------------------------------------------------------
+    def lang_process (self, s, lang=None, bigram=None):
+        if lang in self.langvalues:
+            lang=self.languages[lang]
+        else:
+            print ('Language {} not supported\nusing english'.format(lang))
+            lang = self.languages['en']
+        punctuation = list(string.punctuation)
+        stop = stopwords.words(lang) + punctuation + self.gbwords
+        data={}
+        data['words']=[term for term in self.preprocess(s, True) if term not in stop and not term.startswith(('#', '@', 'http://t.co/', 'https://t.co/'))]
+        data['hash']=[term for term in self.preprocess(s, True) if term not in stop and term.startswith('#')]
+        data['user']=[term for term in self.preprocess(s, True) if term not in stop and term.startswith('@')]
+        if bigram:
+            from nltk import bigrams
+            data['bigrams']=list(bigrams([term for term in self.preprocess(s) if term not in stop]))
+        return (data)
+
+    #=======================================================================================================================
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
+#=======================================================================================================================
 WORLD_WOE_ID = 1
 #-----------------------------------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(
     description ='To test different options',
     epilog      = 'comments > /dev/null'
 )
+
+
 #=======================================================================================================================
 parser.add_argument('--print_',  "-p", action='store_true', help='print')
 parser.add_argument('--mongodb',  "-db", action='store_true', help='print')
@@ -522,6 +580,7 @@ parser.add_argument('--get_tweet_user',  '-gtu', type=str, help='get downloaded 
 parser.add_argument('--userstweets',  "-ut", action='store_true', help='return number of teewts by user ordered desc')
 parser.add_argument('--get_username',  '-gn', type=str, help='get name or screen_name from userid')
 parser.add_argument('--resolve_na',  '-a', action='store_true', help='resolve name or screen_name from userid')
+parser.add_argument('--get_tweet_user2analyze',  '-gtua', type=str, help='get downloaded tweets by name or screen_name to analyze')
 parser.add_argument('--test',  "-test", action='store_true', help='print')
 #-----------------------------------------------------------------------------------------------------------------------
 args = parser.parse_args()
@@ -810,8 +869,36 @@ elif args.get_username:
     mngdb = mongodata()
     user = mngdb.get_username(args.get_username)
     print ("Name:{0}\tscreen_name:{1}").format(user["name"],user["screen_name"])
+elif args.get_tweet_user2analyze:
+    mngdb = mongodata()
+    user_id = mngdb.get_userid(args.get_tweet_user2analyze)
+    if user_id:
+        tweets = mngdb.get_tweets_byuserid(user_id)
+        words = speaking()
+        for line in tweets:
+            print line['text']
+            try:
+                lang = detect(line['text'])
+            except:
+                print ("Language no detected\n using english")
+                lang='en'
+            datos = words.lang_process(line['text'], lang)
+            print datos
+            for key in datos.keys():
+                print ("[{0}]").format(key)
+                totaldata=datos[key]
+                for value in totaldata:
+                    print ("\t{0}").format(value.encode('utf8'))
+
+    else:
+        print ("User not found !!!")
 elif args.test:
      mngdb = mongodata()
      tweet = mngdb.get_tweets_db("",100)
+     words = speaking()
      for i in tweet:
          print i['text'].encode('utf-8')
+         lang=detect(i['text'])
+         print "language:{0}".format(lang)
+         print words.lang_process(i['text'],lang)
+
