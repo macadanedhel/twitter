@@ -4,7 +4,7 @@ Learn some new concepts, testing and playing
 
 ## Getting Started
 
-Obtener datos de tweeter. Primero descargar los usuarios que se sigue y los que te siguen.
+Obtener datos de twitter. Primero descargar los usuarios que se sigue y los que te siguen.
 
 ### 1. Ver las tendencias
 
@@ -37,8 +37,18 @@ Obtener datos de tweeter. Primero descargar los usuarios que se sigue y los que 
 |p| print | imprime a fichero |
 |db|mongodb|  a un mongodb|
 
-### 4. Datos para ir jugando
+### 4. Gestión de IDs, names y screen_names
 
+| opcion | abreviatura | descripción |
+|:------:|:-----------:|-------------|
+| n | get_userid NAME| Obtiene el userId a partir del name o screen_name  |
+| nr | get_userid_regex STRING | Obtiene el userId a partir del name o screen_name basado en regex |
+| gn | get_username userID| Obtiene el name y screen_name a partir de userID |
+| r | users userID| Obtiene el name y screen_name a partir de userID |
+|ut| userstweets | usersid, numero de tweets ordenado descendente | 
+|a| resolve_na | resuelve el userid a name y screen_name | 
+
+### 5. Datos para ir jugando
 Estos datos salen de la mongodb
 
 | opcion | abreviatura | descripción |
@@ -48,24 +58,20 @@ Estos datos salen de la mongodb
 |gtu| get_tweet_user NAME | devuelve los tweets por name o screen_name|
 |p| print | imprime a fichero |
  
-### 5. Datos para ir jugando
+### 6. Busquedas de palabras, hashtags y usuarios
+Estos datos salen de la mongodb
  
 | opcion | abreviatura | descripción |
 |:------:|:-----------:|-------------|
-| u2csv | user2csv | Saca los datos a un csv para empezar a jugar |
-| d2neo | data2neo | Datos para importar en neo4j, usuarios, friends, followers |
-|p| print | imprime a fichero | 
+| hh | hide | Oculta la salida de get_tweet_user2analyze |
+| gtua | get_tweet_user2analyze | Busca en los tweets bajados por name o screen_name las palabras, hashtag y usuarios |
+| au | user | Muestra usuarios en la búsqueda get_tweet_user2analyze |
+| ah | hash | Muestra los hashtag en la búsqueda get_tweet_user2analyze |
+| aw | words | Muestra las palabras en la búsqueda get_tweet_user2analyze |
+| txu | tweetsxuser | Muestra los ids ordenados por los tweets obtenidos |
+| tt | top | Muestra el top 10 de los valores encontrados | 
  
-### 6. Gestión de IDs, names y screen_names
 
-| opcion | abreviatura | descripción |
-|:------:|:-----------:|-------------|
-| n | get_userid NAME| Obtiene el userId a partir del name o screen_name  |
-| nr | get_userid_regex STRING | Obtiene el userId a partir del name o screen_name basado en regex |
-| gn | get_username userID| Obtiene el name y screen_name a partir de userID |
-| nr | get_userid_regex STRING | btiene en userId a partir del name o screen_name basado en regex |
-|ut| userstweets | usersid, numero de tweets ordenado descendente | 
-|a| resolve_na | resuelve el userid a name y screen_name | 
 
 ### Variables
 
@@ -126,6 +132,13 @@ followers_key:friend,user
 friends:friends
 friends_key:user,friend
 ``` 
+#### mas o menos
+* Selecciona una cuenta y mira si mola, `pwt.v.1.py -r nombre_cuenta` si mola -db
+* Escoge un usuario y obten tweets, `pwt.v.1.py -u nombre_cuenta -db`
+* Escoge un usuario y obten a los que sigue  `pwt.v.1.py -rf nombre_cuenta -db`
+* Escoge un usuario y obten los que le siguen  `pwt.v.1.py -of nombre_cuenta -db`, esto puede ser de poco valor
+* Escoge un usuario y mira a ver que le interesa, words, hashtag y usuarios, `pwt.v.1.py -gtua nombre_cuenta` para ver el top 10 `tt` y si solo se quiere eso `hh`. Adminte modificadores por concepto
+
 
 
 #### Prerequisites

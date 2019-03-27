@@ -25,6 +25,8 @@ from recipe__make_twitter_request import make_twitter_request
 
 # ﻿db.getCollection('tweets').find({},{user:1, text:1, retweeted:1, lang:1, created_at:1})
 # ﻿db.getCollection('tweets').find({},{text:1, _id:0})
+#ip:127.0.0.1
+# port:32769
 
 #=======================================================================================================================
 class filedata:

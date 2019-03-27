@@ -7,6 +7,8 @@ import json, csv
 #import parser
 import argparse
 from collections import Counter
+import ConfigParser
+from py2neo import authenticate, Graph, Node, Relationship
 
 from filedata import filedata
 from mongodata import mongodata
@@ -27,6 +29,7 @@ from twmac import twmac
 #-----------------------------------------------------------------------------------------------------------------------
 #=======================================================================================================================
 WORLD_WOE_ID = 1
+TOP=10
 #-----------------------------------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(
     description ='To test different options',
@@ -61,6 +64,7 @@ parser.add_argument('--user',  '-au', action='store_true', help='users in get_tw
 parser.add_argument('--hash',  '-ah', action='store_true', help='hashes in get_tweet_user2analyze')
 parser.add_argument('--words',  '-aw', action='store_true', help='words in get_tweet_user2analyze')
 parser.add_argument('--tweetsxuser',  '-txu', action='store_true', help='shows tweets per user')
+parser.add_argument('--top',  '-tt', action='store_true', help='shows top number in searches of get_tweet_user2analyze')
 
 #parser.add_argument('--test',  "-test", action='store_true', help='print')
 parser.add_argument('--test',  "-test", type=str, help='print')
@@ -159,6 +163,9 @@ elif args.user2csv:
                 rowaux[w] = row[w]
             else:
                 rowaux[w] = row[w]
+            if type(rowaux[w]) is 'str' :
+                rowaux[w] = rowaux[w].replace("\r\n", " ")
+                rowaux[w]=rowaux[w].replace("\n"," ")
         if args.print_:
             users.append(rowaux)
         else:
@@ -406,9 +413,11 @@ elif args.get_tweet_user2analyze:
                             print ".",
         # [term for term in self.preprocess(s, True) if term not in stop and term.startswith('@')]
         print
-        for item in [highlight[key] for key in highlight.keys()]:
-            c = Counter(item)
-            print c.most_common()[:10]  # top 10 print
+        if args.top:
+            print "TOP 10 of items found !!!"
+            for item in [highlight[key] for key in highlight.keys()]:
+                c = Counter(item)
+                print c.most_common()[:10]  # top 10 print
     else:
         print ("User not found !!!")
 elif args.tweetsxuser:
