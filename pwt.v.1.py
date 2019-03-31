@@ -10,6 +10,11 @@ from collections import Counter
 import ConfigParser
 from py2neo import authenticate, Graph, Node, Relationship
 
+import networkx
+from networkx.algorithms.approximation import clique
+import matplotlib
+matplotlib.use('TkAgg')
+
 from filedata import filedata
 from mongodata import mongodata
 from speaking import speaking
@@ -42,9 +47,9 @@ parser.add_argument('--mongodb',  "-db", action='store_true', help='print')
 parser.add_argument('--trends',  "-t", action='store_true', help='To get which it\'s said')
 parser.add_argument('--trendAvailable',  "-ta", action='store_true', help='trends available, it means, countries speaking, WOEID')
 parser.add_argument('--friends',  '-fr', action='store_true', help='get your following contacts')
-parser.add_argument('--other_friend',  '-rf', type=str, help='get other following contacts')
+parser.add_argument('--other_friend',  '-rf', type=str, help='get from other user his "friends" contacts')
 parser.add_argument('--followers',  '-fo', action='store_true', help='get your following contacts')
-parser.add_argument('--other_follower',  '-of', type=str, help='get other following contacts')
+parser.add_argument('--other_follower',  '-of', type=str, help='get from other user his "following" contacts')
 parser.add_argument('--lists',  "-l",  type=str, help='lists of a given user (me|screen_name)')
 parser.add_argument('--memberships',  "-m", action='store_true', help='print')
 parser.add_argument('--tweets',  "-w", action='store_true', help='tweets from home')
@@ -65,12 +70,36 @@ parser.add_argument('--hash',  '-ah', action='store_true', help='hashes in get_t
 parser.add_argument('--words',  '-aw', action='store_true', help='words in get_tweet_user2analyze')
 parser.add_argument('--tweetsxuser',  '-txu', action='store_true', help='shows tweets per user')
 parser.add_argument('--top',  '-tt', action='store_true', help='shows top number in searches of get_tweet_user2analyze')
+parser.add_argument('--clan',  '-c', type=str, help='clique')
+parser.add_argument('--lookup',  '-k', type=str, help='User lookup of a user')
 
 #parser.add_argument('--test',  "-test", action='store_true', help='print')
 parser.add_argument('--test',  "-test", type=str, help='print')
+parser.add_argument('--ptest',  "-ptest", type=str, help='print')
 #-----------------------------------------------------------------------------------------------------------------------
 args = parser.parse_args()
 #-----------------------------------------------------------------------------------------------------------------------
+
+def clan(user, temp=False):
+    twitt_ = twmac()
+    mngdb = mongodata()
+    if str(user).isdigit():
+        followers=twitt_.followersID(user)
+    else:
+        followers = twitt_.followers(user)
+    print ("Getting data from {}".format(user))
+    # Info Usuarios
+    followersItems = followers['ids']
+    # Insert info usuarios + relaciones
+    mngdb.insert_many_followers(followers)
+    # Temporal usuarios
+    if temp:
+        mngdb.insert_temp_users(followersItems)
+    # conjunto de usuarios
+    relation_graph = {(i['user'], i['friend']) for i in followers['followers']}
+    print ("Num relationships :{} ".format(len(relation_graph)))
+    return relation_graph
+
 
 if args.trends:
     twitt_ = twmac()
@@ -83,6 +112,9 @@ if args.trends:
         mngdb.insert_many_trends(world_trends)
     else:
         print (json.dumps(world_trends, indent=1))
+elif args.lookup:
+    twitt_ = twmac()
+    print twitt_.get_user_lookup(args.lookup)
 elif args.trendAvailable:
     twitt_ = twmac()
     world_trends = twitt_.trendAvailable(WORLD_WOE_ID)
@@ -247,9 +279,6 @@ elif args.data2neo:
             friends.append([i['user'], i['friend']])
         else:
             print ("{0},{1}").format(i['user'], i['friend'])
-
-
-
 
     if args.print_:
         fwrite = filedata()
@@ -429,7 +458,22 @@ elif args.tweetsxuser:
             print ("[{0:20}]\t{1} {2}\t{3}").format(id,aux["screen_name"].encode('utf-8'),aux["name"].encode('utf-8'), count)
         else:
             print ("[{0:20}]\t{1}").format(id, count)
-
+elif args.clan:
+    mngdb = mongodata()
+    followersItems = clan(args.clan,True)
+    relation_graph = followersItems
+    for item in [i[1] for i in followersItems]:
+        print item
+        print ("Getting data from {}".format(item))
+        followersFriend = clan(item)
+        relation_graph = relation_graph.union(followersFriend)
+        print ("Num relationships :{} ".format(len(relation_graph)))
+        mngdb.delete_temp_users(item)
+    RG_list = [i for i in relation_graph]
+    G = networkx.Graph()
+    G.add_edges_from(RG_list)
+    print ("Numero de nodos: {}".format(G.number_of_nodes()))
+    print ("Numero de vertices:{}".format(G.number_of_edges()))
 
 elif args.test:
      # mngdb = mongodata()
@@ -443,3 +487,5 @@ elif args.test:
      twitt_ = twmac()
      p=twitt_.users(args.test)
      print (json.dumps(p, indent=1))
+
+#elif args.ptest:

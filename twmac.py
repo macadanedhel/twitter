@@ -92,7 +92,7 @@ class twmac:
         ID_ = ""
         _FRIENDS = 0
         NAME_ = ""
-        ID_ = ""
+
         if not user:
             # query = self.twitter_api.friends.ids(screen_name=self.Config.get('secuser', 'owner'))
             NAME_ = self.Config.get('secuser', 'owner')
@@ -110,25 +110,32 @@ class twmac:
 
         while (int(next_cursor) != 0):
             if int(next_cursor) < 0:
-                query = self.twitter_api.followers.ids(screen_name=NAME_)
+                try:
+                    query = self.twitter_api.followers.ids(screen_name=NAME_)
+                except twitter.TwitterHTTPError as e:
+                    print("Error:{0}\n\nUSER ID:{1}\n").format(e, NAME_)
+                    query = False
             else:
                 query = self.twitter_api.followers.ids(screen_name=NAME_, cursor=next_cursor)
-            next_cursor = query["next_cursor"]
-            if query["ids"] and len(query["ids"]) > 0:
-                _FRIENDS = _FRIENDS + (len(query["ids"]))
-                for n in range(0, len(query["ids"]) - 1, 100):
-                    ids = query["ids"][n:n + 100]
-                    try:
-                        subquery = self.twitter_api.users.lookup(user_id=ids)
-                        for line in subquery:
-                            aux = {}
-                            aux['user'] = self.ID
-                            aux['friend'] = line['id']
-                            relationship.append(aux)
-                            line['_id'] = line.pop('id')
-                            data.append(line)
-                    except twitter.TwitterHTTPError as e:
-                        print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
+            if query:
+                next_cursor = query["next_cursor"]
+                if query["ids"] and len(query["ids"]) > 0:
+                    _FRIENDS = _FRIENDS + (len(query["ids"]))
+                    for n in range(0, len(query["ids"]) - 1, 100):
+                        ids = query["ids"][n:n + 100]
+                        try:
+                            subquery = self.twitter_api.users.lookup(user_id=ids)
+                            for line in subquery:
+                                aux = {}
+                                aux['user'] = ID_
+                                aux['friend'] = line['id']
+                                relationship.append(aux)
+                                line['_id'] = line.pop('id')
+                                data.append(line)
+                        except twitter.TwitterHTTPError as e:
+                            print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
+            else:
+                next_cursor=0
 
         result['num_followers'] = _FRIENDS
         result['ids'] = data
@@ -206,3 +213,29 @@ class twmac:
         result['tweets'] = data
         result['users'] = users
         return (result)
+#-----------------------------------------------------------------------------------------------------------------------
+    def followersID (self,id=None):
+        ID_ = ""
+        _FRIENDS = 0
+        NAME_ = ""
+        ID_ = ""
+        # query = self.twitter_api.friends.ids(screen_name=user)
+        aux = self.twitter_api.users.lookup(user_id=id)
+        NAME_ = aux[0]['screen_name']
+        print NAME_
+        ID_ = id
+        data = []
+        relationship = []
+        return (self.followers(NAME_))
+#-----------------------------------------------------------------------------------------------------------------------
+    def get_user_lookup (self,user=None):
+        user_ = ""
+
+        if not user:
+            user_ = self.twitter_api.users.lookup(user_id=self.ID)
+        elif str(user).isdigit():
+            user_ = self.twitter_api.users.lookup(user_id=user)
+        else:
+            user_ = self.twitter_api.users.lookup(screen_name=user)
+        return (user_)
+#-----------------------------------------------------------------------------------------------------------------------

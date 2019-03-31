@@ -49,12 +49,10 @@ class mongodata:
         except pymongo.errors.BulkWriteError as e:
                     #print("Error:{0}").format(e.details['writeErrors'])
                     print "Error, duplicate data"
-
     def insert_many_friends (self,ALLDATA):
         self.insert_many_users(ALLDATA['ids'])
         self.BBDD.friends.insert_many(ALLDATA['friends']).inserted_ids
         #cpeddbb.twitter.friends.create_index([('title', pymongo.TEXT)], name='title', default_language='english')
-
     def insert_many_followers (self,ALLDATA):
         self.insert_many_users(ALLDATA['ids'])
         self.BBDD.followers.insert_many(ALLDATA['followers']).inserted_ids
@@ -65,14 +63,10 @@ class mongodata:
             self.BBDD.tweets.insert_many(ALLDATA['tweets']).inserted_ids
         except self.BBDD.tweets.BulkWriteError as exc:
             exc.details
-
     def insert_many_trends(self, ALLDATA):
         self.BBDD.trends.insert_many(ALLDATA).inserted_ids
-
-
     def insert_many_trendAvailable(self, ALLDATA):
         self.BBDD.trendAvailable.insert_many(ALLDATA).inserted_ids
-
     def list_users (self):
         return (list(self.BBDD.users.find({}, {"_id": 1, "screen_name": 1, "location": 1, "name": 1, "followers_count": 1,
                                               "friends_count": 1, "created_at": 1, "url": 1, "lang": 1,
@@ -82,14 +76,16 @@ class mongodata:
     def data2neo  (self):
         return (list(self.BBDD.users.find({}, {"_id": 1, "screen_name": 1, "location": 1, "name": 1, "lang": 1,
                                               "verified": 1,  "default_profile":1, "time_zone" :1, "utc_offset":1 })))
-
     def get_users_from_tweets(self):
         return (list(self.BBDD.tweets.find({}, {"id": 1, "user": 1})))
-
     def get_users (self):
         return (list(self.BBDD.users.find({}, {"_id": 1, "screen_name": 1})))
-
     def get_relationship(self, relation):
+
+        """
+        :param relation: tipo de relacion que se quiere buscar, puede ser 'friends' o 'followers'
+        :return:
+        """
         if relation == 'friends':
             return (list(self.BBDD.friends.find({}, {"_id": 0, "friend": 1, "user":1})))
         elif relation == 'followers':
@@ -110,7 +106,6 @@ class mongodata:
         else:
             result=users[0]
         return (result)
-
     def get_tweets_byuserid (self, uid):
         return (self.BBDD.tweets.find({"user": uid}, {"text":1, "_id": 0}))
     def get_userid_regex (self, name):
@@ -146,7 +141,12 @@ class mongodata:
         else:
             result = list(self.BBDD.tweets.find({str1}, {"text": 1, "user": 1, "lang": 1}).limit(limit))
         return (result)
-
+    def get_followers(self,name=None):
+        if str(name).isdigit():
+            _id=name
+        else:
+            _id = self.get_userid(name)
+        return (list(self.BBDD.followers.find({'user':_id}, {"_id": 0, "friend": 1, "user": 1})))
     def tweets_per_user (self, user=None):
         user_ = "$user"
         if user is not None:
@@ -165,3 +165,14 @@ class mongodata:
         for i in tweets:
             data[i["_id"]["user"]]=i["count"]
         return (data)
+    def insert_temp_users (self,  ALLDATA):
+        try:
+            self.BBDD.TMPusers.insert_many(ALLDATA, ordered=False).inserted_ids
+        except pymongo.errors.BulkWriteError as e:
+                    #print("Error:{0}").format(e.details['writeErrors'])
+                    print "Error, duplicate data"
+    def delete_temp_users (self, id):
+        try:
+            self.BBDD.TMPusers.delete_one({'_id': id})
+        except pymongo.errors.BulkWriteError as e:
+            print "Error, duplicate data {}".format(e)

@@ -71,6 +71,11 @@ Estos datos salen de la mongodb
 | txu | tweetsxuser | Muestra los ids ordenados por los tweets obtenidos |
 | tt | top | Muestra el top 10 de los valores encontrados | 
  
+### 7. Otras cosas
+| opcion | abreviatura | descripción |
+|:------:|:-----------:|-------------|
+| hh | hide | Oculta la salida de get_tweet_user2analyze |
+| c NAME | clan NAME | obtiene los seguidores de NAME y los seguidores de los seguidores|
 
 
 ### Variables
