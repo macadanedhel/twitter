@@ -8,10 +8,11 @@ import json, csv
 import argparse
 from collections import Counter
 
-from filedata import filedata
-from mongodata import mongodata
-from speaking import speaking
-from twmac import twmac
+from twist.twmac import *
+from twist.filedata import *
+from twist.mongodata import *
+from twist.speaking import *
+
 
 # En el mongo voy a montar distintas colecciones, unas de catalogo y otras de relacion
 # Objetos principales son el twitter y el user
@@ -27,6 +28,7 @@ from twmac import twmac
 #-----------------------------------------------------------------------------------------------------------------------
 #=======================================================================================================================
 WORLD_WOE_ID = 1
+USERCONFIG = "config/userdata.ini"
 #-----------------------------------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(
     description ='To test different options',
@@ -68,13 +70,15 @@ parser.add_argument('--test',  "-test", type=str, help='print')
 args = parser.parse_args()
 #-----------------------------------------------------------------------------------------------------------------------
 
+
 if args.trends:
-    twitt_ = twmac()
+    twitt_ = twmac(USERCONFIG)
     world_trends = twitt_.trends(WORLD_WOE_ID)
     if args.print_:
          fwrite = filedata()
          fwrite.trends(json.dumps(world_trends, indent=1))
     elif args.mongodb:
+
         mngdb = mongodata()
         mngdb.insert_many_trends(world_trends)
     else:

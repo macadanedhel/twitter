@@ -1,24 +1,28 @@
 import ConfigParser
 import twitter
+import os
 from recipe__make_twitter_request import make_twitter_request
 
-
 class twmac:
-    USERCONFIG = "config/userdata.ini"
-    Config = ConfigParser.ConfigParser()
-    Config.read(USERCONFIG)
     ID=""
     twitter_api = ""
 
-    def __init__(self):
-        consumer_key = self.Config.get('secuser', 'consumer_key')
-        consumer_secret = self.Config.get('secuser', 'consumer_secret')
-        access_key = self.Config.get('secuser', 'access_key')
-        access_secret = self.Config.get('secuser', 'access_secret')
+    def __init__(self, userconfig):
+        Config = ConfigParser.ConfigParser()
+        if os.path.exists(userconfig):
+            Config.read(userconfig)
+        else:
+            print ("{0} file not found !!!")
+            exit (0)
+
+        consumer_key = Config.get('secuser', 'consumer_key')
+        consumer_secret = Config.get('secuser', 'consumer_secret')
+        access_key = Config.get('secuser', 'access_key')
+        access_secret = Config.get('secuser', 'access_secret')
         auth = twitter.oauth.OAuth(access_key, access_secret,
                                    consumer_key, consumer_secret)
         self.twitter_api = twitter.Twitter(auth=auth,retry=True)
-        aux = self.twitter_api.users.lookup(screen_name=self.Config.get('secuser', 'owner'))
+        aux = self.twitter_api.users.lookup(screen_name=Config.get('secuser', 'owner'))
         self.ID= long(aux[0]['id'])
 
 # -----------------------------------------------------------------------------------------------------------------------

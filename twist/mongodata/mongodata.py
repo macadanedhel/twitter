@@ -1,8 +1,9 @@
-import ConfigParser
-import datetime
+import datetime, os
 import pymongo
-from py2neo import authenticate, Graph, Node, Relationship
+import ConfigParser
 
+
+from py2neo import authenticate, Graph, Node, Relationship
 class mongodata:
     ENVCONFIG = "config/env.ini"
     EnvConfig = ConfigParser.ConfigParser()
@@ -11,12 +12,16 @@ class mongodata:
     DATETIME = ""
     BBDD = ""
 
-    def __init__(self):
-        self.EnvConfig = ConfigParser.ConfigParser()
-        self.EnvConfig.read(self.ENVCONFIG)
+    def __init__(self,userconfig):
+        Config = ConfigParser.ConfigParser()
+        if os.path.exists(userconfig):
+            Config.read(userconfig)
+        else:
+            print ("{0} file not found !!!")
+            exit(0)
         self.DATETIME = str(datetime.datetime.isoformat(datetime.datetime.now()))
-        host = self.EnvConfig.get('mongodb', 'ip')
-        port = int(self.EnvConfig.get('mongodb', 'port'))
+        host = Config.get('mongodb', 'ip')
+        port = int(Config.get('mongodb', 'port'))
         client = pymongo.MongoClient(host, port)
         self.BBDD = client.twitter
         args={ "validator": {

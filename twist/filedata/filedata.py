@@ -1,16 +1,16 @@
 import ConfigParser
-import datetime
+import datetime, os
 
 class filedata:
-    ENVCONFIG = "config/env.ini"
-    EnvConfig = ConfigParser.ConfigParser()
-    Config = ConfigParser.ConfigParser()
-    EnvConfig.read(ENVCONFIG)
     DATETIME = ""
 
-    def __init__(self):
-        self.EnvConfig = ConfigParser.ConfigParser()
-        self.EnvConfig.read(self.ENVCONFIG)
+    def __init__(self, userconfig):
+        Config = ConfigParser.ConfigParser()
+        if os.path.exists(userconfig):
+            Config.read(userconfig)
+        else:
+            print ("{0} file not found !!!")
+            exit(0)
         self.DATETIME = str(datetime.datetime.isoformat(datetime.datetime.now()))
     def write_ (self, file_, data):
         #print ("output:{0}").format(file_)
