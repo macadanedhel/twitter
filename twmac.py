@@ -114,28 +114,25 @@ class twmac:
                     query = self.twitter_api.followers.ids(screen_name=NAME_)
                 except twitter.TwitterHTTPError as e:
                     print("Error:{0}\n\nUSER ID:{1}\n").format(e, NAME_)
-                    query = False
+                    return(False)
             else:
                 query = self.twitter_api.followers.ids(screen_name=NAME_, cursor=next_cursor)
-            if query:
-                next_cursor = query["next_cursor"]
-                if query["ids"] and len(query["ids"]) > 0:
-                    _FRIENDS = _FRIENDS + (len(query["ids"]))
-                    for n in range(0, len(query["ids"]) - 1, 100):
-                        ids = query["ids"][n:n + 100]
-                        try:
-                            subquery = self.twitter_api.users.lookup(user_id=ids)
-                            for line in subquery:
-                                aux = {}
-                                aux['user'] = ID_
-                                aux['friend'] = line['id']
-                                relationship.append(aux)
-                                line['_id'] = line.pop('id')
-                                data.append(line)
-                        except twitter.TwitterHTTPError as e:
-                            print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
-            else:
-                next_cursor=0
+            next_cursor = query["next_cursor"]
+            if query["ids"] and len(query["ids"]) > 0:
+                _FRIENDS = _FRIENDS + (len(query["ids"]))
+                for n in range(0, len(query["ids"]) - 1, 100):
+                    ids = query["ids"][n:n + 100]
+                    try:
+                        subquery = self.twitter_api.users.lookup(user_id=ids)
+                        for line in subquery:
+                            aux = {}
+                            aux['user'] = ID_
+                            aux['friend'] = line['id']
+                            relationship.append(aux)
+                            line['_id'] = line.pop('id')
+                            data.append(line)
+                    except twitter.TwitterHTTPError as e:
+                        print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
 
         result['num_followers'] = _FRIENDS
         result['ids'] = data

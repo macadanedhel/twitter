@@ -83,21 +83,24 @@ args = parser.parse_args()
 def clan(user, temp=False):
     twitt_ = twmac()
     mngdb = mongodata()
+    relation_graph={}
     if str(user).isdigit():
         followers=twitt_.followersID(user)
     else:
         followers = twitt_.followers(user)
-    print ("Getting data from {}".format(user))
-    # Info Usuarios
-    followersItems = followers['ids']
-    # Insert info usuarios + relaciones
-    mngdb.insert_many_followers(followers)
-    # Temporal usuarios
-    if temp:
-        mngdb.insert_temp_users(followersItems)
-    # conjunto de usuarios
-    relation_graph = {(i['user'], i['friend']) for i in followers['followers']}
-    print ("Num relationships :{} ".format(len(relation_graph)))
+    if followers:
+        print ("Getting data from {}".format(user))
+        # Info Usuarios
+        followersItems = followers['ids']
+        # Insert info usuarios + relaciones
+        if len(followers['ids'])>0:
+            mngdb.insert_many_followers(followers)
+        # Temporal usuarios
+        if temp:
+            mngdb.insert_temp_users(followersItems)
+        # conjunto de usuarios
+        relation_graph = {(i['user'], i['friend']) for i in followers['followers']}
+        print ("Num relationships :{} ".format(len(relation_graph)))
     return relation_graph
 
 
@@ -202,7 +205,7 @@ elif args.user2csv:
             users.append(rowaux)
         else:
             print (
-                "{_id},{screen_name},{location},{name},{followers_count},{friends_count},{created_at},{url},{lang},{screen_name},{retweet_count}, {verified}, {listed_count},{statuses_count}, {default_profile},{withheld_in_countries},{description},{time_zone},{utc_offset},{lang}".format(
+                "{_id},{screen_name},{location},{name},{followers_count},{friends_count},{created_at},{url},{userdata['created_at'] =},{screen_name},{retweet_count}, {verified}, {listed_count},{statuses_count}, {default_profile},{withheld_in_countries},{description},{time_zone},{utc_offset},{lang}".format(
                     **rowaux))
 
     if args.print_:

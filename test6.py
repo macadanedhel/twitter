@@ -47,7 +47,8 @@ def _follower(name):
 twitt_ = twmac()
 #followers=twitt_.followersID(77555910)
 mngdb = mongodata()
-followers=mngdb.get_followers('macarionull')
+#followers=mngdb.get_followers('macarionull')
+followers=mngdb.get_followers('vespadict')
 relation_graph = { (i['user'], i['friend']) for i in followers }
 for item in followers:
     print ("Getting data from {}".format(item['friend']))
@@ -78,7 +79,7 @@ print cliques
 
 for clique in cliques:
     x=len(clique)
-    if x > 2:
+    if x > 3:
         print x
 
 
