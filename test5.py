@@ -10,7 +10,10 @@ import argparse
 import datetime, time
 import pymongo
 from py2neo import authenticate, Graph, Node, Relationship
-
+from langdetect import detect
+from nltk.corpus import stopwords
+import string
+import unicodedata
 
 from recipe__make_twitter_request import make_twitter_request
 
@@ -19,6 +22,11 @@ from recipe__make_twitter_request import make_twitter_request
 # Una coleccion debe ser users
 # La colección friends tendrá dos campos user, friend y el valor será el id
 # la coleccion followers tendrá dos campos user, follower y el valor será el id
+
+# ﻿db.getCollection('tweets').find({},{user:1, text:1, retweeted:1, lang:1, created_at:1})
+# ﻿db.getCollection('tweets').find({},{text:1, _id:0})
+#ip:127.0.0.1
+# port:32769
 
 #=======================================================================================================================
 class filedata:
@@ -147,6 +155,10 @@ class filedata:
         ffff.close()
         fffff.close()
         return(files)
+    def users(self, data):
+        USERS = self.EnvConfig.get('path', 'data') + '/' + self.EnvConfig.get('prefix',
+                                                                               'users') + '_' + self.DATETIME + ".json"
+        self.write_(USERS, data)
 #=======================================================================================================================
 class mongodata:
     ENVCONFIG = "config/env.ini"
@@ -164,7 +176,30 @@ class mongodata:
         port = int(self.EnvConfig.get('mongodb', 'port'))
         client = pymongo.MongoClient(host, port)
         self.BBDD = client.twitter
-
+        args={ "validator": {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["friends_count", "followers_count", "listed_count", "statuses_count", "favourites_count"],
+            "properties": {
+                "friends_count": {
+                    "bsonType": "long"
+                },
+                "followers_count": {
+                    "bsonType": "long"
+                },
+                "listed_count": {
+                    "bsonType": "long"
+                },
+                "statuses_count": {
+                    "bsonType": "long"
+                },
+                "favourites_count": {
+                    "bsonType": "long"
+                }
+            }
+        }}
+        }
+        #self.BBDD.create_collection("users",**args)
     def insert_many_users (self,  ALLDATA):
         try:
             self.BBDD.users.insert_many(ALLDATA, ordered=False).inserted_ids
@@ -218,6 +253,56 @@ class mongodata:
             return (list(self.BBDD.followers.find({}, {"_id": 0, "friend": 1, "user": 1})))
         else:
             print "ERROR: No relationship"
+    def get_userid (self, name):
+        users=list(self.BBDD.users.find({ "$or": [ {"screen_name":name}, {"name":name} ] },{"_id":1}))
+        if len(users)<1:
+            result=0
+        else:
+            result=users[0]['_id']
+        return (result)
+    def get_username (self, id):
+        users=list(self.BBDD.users.find({ "id_str" : id } ,{ "_id":0, "name":1, "screen_name":1 } ))
+        if len(users)<1:
+            result=0
+        else:
+            result=users[0]
+        return (result)
+
+    def get_tweets_byuserid (self, uid):
+        return (self.BBDD.tweets.find({"user": uid}, {"text":1, "_id": 0}))
+    def get_userid_regex (self, name):
+        #users=list(self.BBDD.users.find({"name":{"$regex":name, "$options":"i"} },{"_id":1, "name":1}))
+        users = list(self.BBDD.users.find(
+            {"$or": [{"screen_name": {"$regex": name, "$options": "i"}}, {"name": {"$regex": name, "$options": "i"}}]},
+            {"_id": 1, "name": 1, "screen_name":1 }))
+        if len(users)<1:
+            result=0
+        else:
+            result=users
+        return (result)
+    def get_tweets_users (self):
+        tweets = self.BBDD.tweets.aggregate(
+            [
+                {
+                    "$group": {
+                    "_id": {"user": "$user"},
+                    "count": { "$sum":1}
+                }
+            },
+            { "$sort": {"count": -1}}])
+        return (tweets)
+    def get_tweets_db (self, name=None, limit=None):
+        str1=""
+        str2=""
+        if name and limit:
+            result = list(self.BBDD.tweets.find({}, {"text": 1, "user": 1, "lang": 1}).limit(limit))
+        elif name:
+            result = list(self.BBDD.tweets.find({ "name" : name }, {"text": 1, "user": 1, "lang": 1}))
+        elif limit:
+            result=list(self.BBDD.tweets.find({}, {"text": 1, "user": 1, "lang":1}).limit(limit))
+        else:
+            result = list(self.BBDD.tweets.find({str1}, {"text": 1, "user": 1, "lang": 1}).limit(limit))
+        return (result)
 #=======================================================================================================================
 class twmac:
     USERCONFIG = "config/userdata.ini"
@@ -246,40 +331,50 @@ class twmac:
 #-----------------------------------------------------------------------------------------------------------------------
     def friends (self,user=None):
         ID_ = ""
+        _FRIENDS = 0
+        NAME_ = ""
+        ID_ = ""
         if not user:
-            query=  self.twitter_api.friends.ids(screen_name = self.Config.get('secuser','owner'))
+            NAME_ = self.Config.get('secuser', 'owner')
             ID_ = self.ID
-        else :
-            query= self.twitter_api.friends.ids(screen_name=user)
-            aux = self.twitter_api.users.lookup(screen_name=user)
-            ID_ = long(aux[0]['id'])
-        data =[]
-        relationship=[]
-        result={}
-        if query["ids"] and len(query["ids"]) > 0:
-            print "found %d friends" % (len(query["ids"]) - 1)
-            cont = 0
-            for n in range(0, len(query["ids"])-1, 100):
-                ids = query["ids"][n:n + 100]
-                try:
-                    subquery = self.twitter_api.users.lookup(user_id = ids)
-                    for line in subquery:
-                        aux = {}
-                        aux['user']=self.ID
-                        aux['friend']=line['id']
-                        relationship.append(aux)
-                        line['_id'] = line.pop('id')
-                        data.append(line)
-                except twitter.TwitterHTTPError as e:
-                    print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
-            result['num_friends']=len(query["ids"])-1
-            result['ids']=data
-            result['friends']=relationship
         else:
-            result['num_friends'] = 0
-            result['ids'] = data
-            result['friends'] = relationship
+            aux = self.twitter_api.users.lookup(screen_name=user)
+            NAME_ = user
+            ID_ = long(aux[0]['id'])
+        data = []
+        relationship = []
+        result = {}
+
+        next_cursor = "-1"
+
+        while (int(next_cursor) != 0):
+            if int(next_cursor) < 0:
+                query = self.twitter_api.friends.ids(screen_name=NAME_)
+            else:
+                query = self.twitter_api.friends.ids(screen_name=NAME_, cursor=next_cursor)
+            next_cursor = query["next_cursor"]
+            if query["ids"] and len(query["ids"]) > 0:
+                _FRIENDS = _FRIENDS + (len(query["ids"]))
+                print ("found {} friends").format(_FRIENDS)
+                for n in range(0, len(query["ids"]) - 1, 100):
+                    ids = query["ids"][n:n + 100]
+                    try:
+                        subquery = self.twitter_api.users.lookup(user_id=ids)
+                        for line in subquery:
+                            aux = {}
+                            aux['user'] = self.ID
+                            aux['friend'] = line['id']
+                            relationship.append(aux)
+                            line['_id'] = line.pop('id')
+                            data.append(line)
+                    except twitter.TwitterHTTPError as e:
+                        print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
+
+        result['num_friends'] = _FRIENDS
+        result['ids'] = data
+        result['friends'] = relationship
         return (result)
+
 #-----------------------------------------------------------------------------------------------------------------------
     def lists (self,user=None):
         if not user:
@@ -295,44 +390,60 @@ class twmac:
             data= self.twitter_api.lists.memberships(screen_name=user)
 #-----------------------------------------------------------------------------------------------------------------------
     def followers (self,user=None):
-        ID_=""
+        ID_ = ""
+        _FRIENDS = 0
+        NAME_ = ""
+        ID_ = ""
         if not user:
-            query = self.twitter_api.followers.ids(screen_name=self.Config.get('secuser', 'owner'))
+            # query = self.twitter_api.friends.ids(screen_name=self.Config.get('secuser', 'owner'))
+            NAME_ = self.Config.get('secuser', 'owner')
             ID_ = self.ID
-        else :
-            query = self.twitter_api.followers.ids(screen_name=user)
+        else:
+            # query = self.twitter_api.friends.ids(screen_name=user)
             aux = self.twitter_api.users.lookup(screen_name=user)
+            NAME_ = user
             ID_ = long(aux[0]['id'])
         data = []
+        relationship = []
         result = {}
-        followers_ = []
-        if query["ids"] and len(query["ids"])>0:
-            print "found %d followers" % (len(query["ids"])-1)
-            cont = 0
-            for n in range(0, len(query["ids"])-1, 100):
-                ids = query["ids"][n:n + 100]
-                try:
-                    subquery = self.twitter_api.users.lookup(user_id = ids)
-                    for line in subquery:
-                        aux = {}
-                        aux['user'] = ID_
-                        aux['friend'] = line['id']
-                        line['_id']=line.pop('id')
-                        data.append(line)
-                        followers_.append(aux)
-                except twitter.TwitterHTTPError as e:
-                    print("Error:{0}\n\nUSER ID:{1}\n").format(e,ids)
-            result['num_followers']=len(query["ids"])-1
-            result['ids']=data
-            result['followers'] = followers_
-        else:
-            result['num_followers'] = 0
-            result['ids'] = data
-            result['followers'] = followers_
+
+        next_cursor = "-1"
+
+        while (int(next_cursor) != 0):
+            if int(next_cursor) < 0:
+                query = self.twitter_api.followers.ids(screen_name=NAME_)
+            else:
+                query = self.twitter_api.followers.ids(screen_name=NAME_, cursor=next_cursor)
+            next_cursor = query["next_cursor"]
+            if query["ids"] and len(query["ids"]) > 0:
+                _FRIENDS = _FRIENDS + (len(query["ids"]))
+                for n in range(0, len(query["ids"]) - 1, 100):
+                    ids = query["ids"][n:n + 100]
+                    try:
+                        subquery = self.twitter_api.users.lookup(user_id=ids)
+                        for line in subquery:
+                            aux = {}
+                            aux['user'] = self.ID
+                            aux['friend'] = line['id']
+                            relationship.append(aux)
+                            line['_id'] = line.pop('id')
+                            data.append(line)
+                    except twitter.TwitterHTTPError as e:
+                        print("Error:{0}\n\nUSER ID:{1}\n").format(e, ids)
+
+        result['num_followers'] = _FRIENDS
+        result['ids'] = data
+        result['followers'] = relationship
+        print ("found {} followers").format(_FRIENDS)
         return (result)
 #-----------------------------------------------------------------------------------------------------------------------
-    def test (self):
-        return (self.twitter_api.users.lookup(screen_name = self.Config.get('secuser', 'owner')))
+    def users (self,users):
+        data=[]
+        USERS=self.twitter_api.users.lookup(screen_name=users)
+        for line in USERS:
+            line['_id'] = line.pop('id')
+            data.append(line)
+        return(data)
 #-----------------------------------------------------------------------------------------------------------------------
     def get_tweet_timeline(self, user=None, name_=None):
         KW = {  # For the Twitter API call
@@ -397,16 +508,75 @@ class twmac:
         result['users'] = users
         return (result)
 #=======================================================================================================================
+class speaking:
+
+    emoticons_str = r"""
+        (?:
+            [:=;xX][oO\-]?[D\)\]\(\]/\\OpPXx]
+        )"""
+    regex_str = [
+        emoticons_str,
+        r'<[^>]+>',  # HTML tags
+        r'(?:@[\w_]+)',  # @-mentions
+        r"(?:\#+[\w_]+[\w\'_\-]*[\w_]+)",  # hash-tags
+        r'http[s]?://(?:[a-z]|[0-9]|[$-_@.&amp;+]|[!*\(\),]|(?:%[0-9a-f][0-9a-f]))+',  # URLs
+        r'(?:(?:\d+,?)+(?:\.?\d+)?)',  # numbers
+        r"(?:[a-z][a-z'\-_]+[a-z])",  # words with - and '
+        r'(?:[\w_]+)',  # other words
+        r'(?:\S)'  # anything else
+    ]
+    #acento_re=re.compile()
+    tokens_re = re.compile(r'('+'|'.join(regex_str)+')', re.VERBOSE | re.IGNORECASE | re.UNICODE)
+    emoticon_re = re.compile(r'^'+emoticons_str+'$', re.VERBOSE | re.IGNORECASE | re.UNICODE)
+    langvalues=['en','es']
+    gbwords=['rt', 'via', 'RT', 'VIA']
+    languages={'en':'english','es':'spanish'}
+    # -----------------------------------------------------------------------------------------------------------------------
+    def tokenize(self, s):
+        s = unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore')
+        return self.tokens_re.findall(s)
+    # -----------------------------------------------------------------------------------------------------------------------
+    def preprocess(self, s, lowercase=False):
+        # QUITA LOS EMOTIS
+        tokens = self.tokenize(s)
+        if lowercase:
+            tokens = [token.lower() for token in tokens if not self.emoticon_re.search(token) ]
+        return tokens
+    # -----------------------------------------------------------------------------------------------------------------------
+    def lang_process (self, s, lang=None, users=None, hash=None, words=None, bigram=None):
+        if lang in self.langvalues:
+            lang=self.languages[lang]
+        else:
+            #print ('Language {} not supported\nusing english'.format(lang))
+            lang = self.languages['en']
+        punctuation = list(string.punctuation)
+        stop = stopwords.words(lang) + punctuation + self.gbwords
+        data={}
+        if words:
+            data['words']=[term for term in self.preprocess(s, True) if term not in stop and not term.startswith(('#', '@', 'http://t.co/', 'https://t.co/'))]
+        if hash:
+            data['hash']=[term for term in self.preprocess(s, True) if term not in stop and term.startswith('#')]
+        if users:
+            data['user']=[term for term in self.preprocess(s, True) if term not in stop and term.startswith('@')]
+        if bigram:
+            from nltk import bigrams
+            data['bigrams']=list(bigrams([term for term in self.preprocess(s) if term not in stop]))
+        return (data)
+
+    #=======================================================================================================================
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
+#=======================================================================================================================
 WORLD_WOE_ID = 1
 #-----------------------------------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(
     description ='To test different options',
     epilog      = 'comments > /dev/null'
 )
+
+
 #=======================================================================================================================
 parser.add_argument('--print_',  "-p", action='store_true', help='print')
 parser.add_argument('--mongodb',  "-db", action='store_true', help='print')
@@ -419,11 +589,22 @@ parser.add_argument('--other_follower',  '-of', type=str, help='get other follow
 parser.add_argument('--lists',  "-l",  type=str, help='lists of a given user (me|screen_name)')
 parser.add_argument('--memberships',  "-m", action='store_true', help='print')
 parser.add_argument('--tweets',  "-w", action='store_true', help='tweets from home')
+parser.add_argument('--users',  "-r", type=str, help='users to find, you can use various names, comma separated without spaces')
 parser.add_argument('--tweets_user',  "-u", type=str, help='tweets of a given user (me|screen_name)')
 parser.add_argument('--user2csv',  "-u2csv", action='store_true', help='data user to analyze')
 parser.add_argument('--data2neo',  "-d2neo", action='store_true', help='data to graph creation')
-parser.add_argument('--test',  "-test", action='store_true', help='print')
-
+parser.add_argument('--get_userid',  '-n', type=str, help='get userid by name or screen_name')
+parser.add_argument('--get_userid_regex',  '-nr', type=str, help='get userid by name or screen_name but regex based')
+parser.add_argument('--get_tweet_user',  '-gtu', type=str, help='get downloaded tweets by name or screen_name')
+parser.add_argument('--userstweets',  "-ut", action='store_true', help='return number of teewts by user ordered desc')
+parser.add_argument('--get_username',  '-gn', type=str, help='get name or screen_name from userid')
+parser.add_argument('--resolve_na',  '-a', action='store_true', help='resolve name or screen_name from userid')
+parser.add_argument('--get_tweet_user2analyze',  '-gtua', type=str, help='get downloaded tweets by name or screen_name to analyze, hash, user and words')
+parser.add_argument('--user',  '-au', action='store_true', help='users in get_tweet_user2analyze')
+parser.add_argument('--hash',  '-ah', action='store_true', help='hashes in get_tweet_user2analyze')
+parser.add_argument('--words',  '-aw', action='store_true', help='words in get_tweet_user2analyze')
+#parser.add_argument('--test',  "-test", action='store_true', help='print')
+parser.add_argument('--test',  "-test", type=str, help='print')
 #-----------------------------------------------------------------------------------------------------------------------
 args = parser.parse_args()
 #-----------------------------------------------------------------------------------------------------------------------
@@ -472,6 +653,17 @@ elif args.lists:
 elif args.memberships:
     twitt_ = twmac()
     lists = twitt_.memberships()
+elif args.users:
+    twitt_ = twmac()
+    users = twitt_.users(args.users)
+    if args.print_:
+        fwrite = filedata()
+        fwrite.users(json.dumps(users, indent=1))
+    elif args.mongodb :
+        mngdb = mongodata()
+        mngdb.insert_many_users(users)
+    else:
+        print (json.dumps(users, indent=1))
 elif args.followers or args.other_follower:
     twitt_ = twmac()
     some=args.other_follower
@@ -542,10 +734,6 @@ elif args.tweets or args.tweets_user:
     else:
         print (json.dumps(tweets['tweets'], indent=1))
         print (json.dumps(tweets['users'], indent=1))
-elif args.test:
-    print "test"
-
-
 elif args.data2neo:
     mngdb = mongodata()
     myself = mngdb.data2neo()
@@ -679,4 +867,88 @@ elif args.data2neo:
         print ("File {0} loaded !!!").format(files['followers'])
         os.remove(files['followers'])
         print ("\tFile {0} removed !!!\n").format(files['followers'])
+elif args.get_userid:
+    mngdb = mongodata()
+    user_id = mngdb.get_userid(args.get_userid)
+    print user_id
+elif args.get_tweet_user:
+    mngdb = mongodata()
+    user_id = mngdb.get_userid(args.get_tweet_user)
+    if user_id:
+        tweets=mngdb.get_tweets_byuserid(user_id)
+        for line in tweets:
+            print line['text']
+    else:
+        print ("User not found !!!")
+elif args.get_userid_regex:
+    mngdb = mongodata()
+    user_id = mngdb.get_userid_regex(args.get_userid_regex)
+    if user_id:
+        for user in user_id:
+            print ("name: {0}\tscreen_name: {1}").format(user['name'].encode('utf-8'),
+                                                       user['screen_name'].encode('utf-8'))
+elif args.userstweets:
+    mngdb = mongodata()
+    tweets = mngdb.get_tweets_users()
+    total=0
+    for t in tweets:
+        if args.resolve_na:
+            aux=mngdb.get_username(str(t['_id']['user']))
+            print ("Name:{0}\tscreen_name:{1}\t{2}").format(aux["name"].encode('utf-8'),aux["screen_name"].encode('utf-8'),t['count'])
+        else:
+            print ("User:{0}\t{1}").format(t['_id']['user'], t['count'])
+        total=total+t['count']
+    print("Total tweets {}").format(total)
+elif args.get_username:
+    mngdb = mongodata()
+    user = mngdb.get_username(args.get_username)
+    print ("Name:{0}\tscreen_name:{1}").format(user["name"],user["screen_name"])
+elif args.get_tweet_user2analyze:
+    mngdb = mongodata()
+    _users=None
+    if args.user:
+        _users=True
+    _words=None
+    if args.words:
+        _words=True
+    _hash=None
+    if args.hash:
+        _hash = True
+    if not( _users or _hash or _words ):
+        print 1
+        _users=_hash=_words=True
+    user_id = mngdb.get_userid(args.get_tweet_user2analyze)
+    if user_id:
+        tweets = mngdb.get_tweets_byuserid(user_id)
+        words = speaking()
+        for line in tweets:
+            #print line['text']
+            try:
+                lang = detect(line['text'])
+            except:
+                #print ("Language no detected\n using english")
+                lang='en'
+            datos = words.lang_process(line['text'], lang, _users, _hash, _words)
+            #print datos
+            for key in datos.keys():
+                if len(datos[key])>0:
+                    print ("[{0}]").format(key)
+                    totaldata=datos[key]
+                    for value in totaldata:
+                        print ("\t{0}").format(value.encode('utf8'))
+    else:
+        print ("User not found !!!")
 
+
+elif args.test:
+     # mngdb = mongodata()
+     # tweet = mngdb.get_tweets_db("",100)
+     # words = speaking()
+     # for i in tweet:
+     #     print i['text'].encode('utf-8')
+     #     lang=detect(i['text'])
+     #     print "language:{0}".format(lang)
+     #     print words.lang_process(i['text'],lang)
+     twitt_ = twmac()
+     p=twitt_.users(args.test)
+     print (json.dumps(p, indent=1))
