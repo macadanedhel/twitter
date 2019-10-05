@@ -1,10 +1,33 @@
+# -*- coding: utf-8 -*-
+# encoding=utf8
+
+import re
+from bs4 import BeautifulSoup
 import requests
-#import beautifulsoup4
-import ConfigParser
-import os
 import random
+import os, sys
+import logging
+import ConfigParser
+import datetime
 
 from fake_useragent import UserAgent
+from twist.format import twuser, tweet
+
+def config_log (fileconf, name):
+    Config = ConfigParser.ConfigParser()
+    if os.path.exists(fileconf):
+        Config.read(fileconf)
+    else:
+        print ("{0} file not found !!!")
+        exit(0)
+    logging.basicConfig(filename=(
+            Config.get('log', 'path') + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + Config.get('log',
+                                                                                                       'name')),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+
+    logger = logging.getLogger("{}".format(name))
+    logger.setLevel(logging.INFO)
+    return logger
 
 user_agent_list = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
@@ -65,16 +88,70 @@ class scrapbase:
         self.token = None
         headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
         self.ua=headers
-        print self.ua
+        self.DEBUG = debug
+        self.userconfig = userconfig
         if debug:
-            self.enable_debug()
+            self.logger = config_log (userconfig , __name__ )
+        self.userdata = ""
 
+    def _page (self, name):
+        url = self.base+self.search+name
+        if self.DEBUG:
+            self.logger.info("BEGIN _page")
+        if self.DEBUG:
+            self.logger.info("GET {}".format(self.base+self.search+name))
+        res = requests.get(url, headers=self.ua)
 
-    def _searchUSER (self, name, change=False):
-        result={}
+        html = BeautifulSoup(res.content, "html.parser")
+        try:
+            resultado = html.find('div', 'SearchEmptyTimeline-emptyDescription').text
+            if self.DEBUG:
+                self.logger.info("html.find : {0} / {1}".format('div', 'SearchEmptyTimeline-emptyDescription'))
+        except:
+            if self.DEBUG:
+                url = self.base + name
+                self.logger.info("GET {}".format(url))
+            res = requests.get(url, headers=self.ua)
+            html = BeautifulSoup(res.content, "html.parser")
+        result=html
+        if self.DEBUG:
+            self.logger.info("END _page")
+        return result
+
+    def searchUSER (self, name, type=0, change=False):
+        if self.DEBUG:
+            self.logger.info("BEGIN searchUSER")
         if change:
             self.ua= RandomUserAgent()
-        res = requests.get(self.base+self.search+name, headers=self.ua)
-        result['status_code']=res.status_code
-        result['content']=res.content
+        result={}
+        result['html']=self._page(name)
+        result['user']=self._user(type, result['html'])
+        if self.DEBUG:
+            self.logger.info(result['user'])
+        if self.DEBUG:
+            self.logger.info("END searchUSER")
         return result
+
+    def _user(self, type, html):
+        suser = twuser.twuser(self.DEBUG, self.userconfig)
+        suser.createuser(type, html)
+        return suser.userdata
+
+    def searchTweets (self, name):
+        # cambia el none
+        if self.DEBUG:
+            self.logger.info("BEGIN searchTweets")
+        html = self._page(name)
+        position = html.find_all("li", "js-stream-item")[-1]["data-item-id"]
+        all_tweets = []
+        timeline = html.select('#timeline li.stream-item')
+        _tweet = tweet.tweet(self.DEBUG, self.userconfig)
+        for tw in timeline:
+            x =_tweet._add_tweets(tw)
+
+        if self.DEBUG:
+            print (_tweet._num())
+            _tweet._display_tweets()
+            self.logger.info("num : {}".format(_tweet._num()))
+            self.logger.info("END searchTweets")
+

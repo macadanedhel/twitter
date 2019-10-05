@@ -88,7 +88,6 @@ def main():
              fwrite = filedata()
              fwrite.trends(json.dumps(world_trends, indent=1))
         elif args.mongodb:
-
             mngdb = mongodata()
             mngdb.insert_many_trends(world_trends)
         else:

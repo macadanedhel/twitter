@@ -77,7 +77,6 @@ class twmac:
         result['ids'] = data
         result['friends'] = relationship
         return (result)
-
 #-----------------------------------------------------------------------------------------------------------------------
     def lists (self,user=None):
         if not user:

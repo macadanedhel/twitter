@@ -1,7 +1,7 @@
 import re
 from bs4 import BeautifulSoup
 
-file = "trapi2.txt"
+file = "trapi3.txt"
 
 f = open(file, 'r')
 doc=f.read()
@@ -20,7 +20,7 @@ userdata={
         "verified_account" : False,
         "likes" : 0,
         "lists" : 0,
-        "joined": ""
+        "created_at": ""
 
 }
 html = BeautifulSoup(doc, "html.parser")
@@ -37,36 +37,83 @@ all_tweets = []
 # res=html.find("div", "ProfileCard js-actionable-user ProfileCard--wide")
 # bi=res.find("a", "ProfileCard-bg js-nav")
 # print bi['style'].split('(')[0]
+
+
+# https://twitter.com/i/profiles/show/macarionull/timeline/tweets?include_available_features=1&include_entities=1&max_position=883022379856920576&reset_error_state=false
 user=html.find("div","ProfileCard js-actionable-user ProfileCard--wide")
+
+
+
 if user is None:
-    user=html.find("div","ProfileHeaderCard")
-    userdata['background_image'] = html.find("div","ProfileCanopy-headerBg").find("img")["src"]
+    userdata['_id'] = html.find('div', 'ProfileCanopy-navBar u-boxShadow').find('div', 'ProfileNav')['data-user-id']
+
+    user = html.find("div","ProfileHeaderCard")
     userdata['name'] = user.find("a", "ProfileHeaderCard-nameLink u-textInheritColor js-nav").text
+    userdata['screen_name'] = re.sub('\n*\s*\n*', '',
+                                     user.find("b", "u-linkComplex-target").text)
+    try:
+        userdata['description'] = user.find("p", "ProfileHeaderCard-bio u-dir").text
+    except:
+        userdata['description'] = ""
+    try:
+        userdata['created_at'] = user.find("div", "ProfileHeaderCard-joinDate").find("span", "ProfileHeaderCard-joinDateText js-tooltip u-dir")[
+        'title']
+    except:
+        userdata['created_at'] = ""
+    try:
+        userdata['location'] = re.sub('\n*\s*\n*','',user.find('div', 'ProfileHeaderCard-location').text)
+    except:
+        userdata['location'] = ""
+    try:
+        userdata['url_user_home'] = user.find("span", "ProfileHeaderCard-urlText u-dir").find('a', 'u-textUserColor')['title']
+    except:
+        userdata['url_user_home'] = ""
+    try:
+        userdata['background_image'] = re.sub('\n*\s*\n*','',html.find("div","ProfileCanopy-headerBg").find("img")["src"])
+    except:
+        userdata['background_image'] = ""
+
+    try:
+        userdata['born'] = re.sub('\n*$','',re.sub('^\n*\s*','',user.find("span", "ProfileHeaderCard-birthdateText u-dir").text))
+    except:
+        userdata['born'] = ""
+
     accountType = user.find("span","ProfileHeaderCard-badges")
+
     if not type(accountType) is 'NoneType' :
         if user.find("span","Icon Icon--verified"):
             userdata['verified_account'] = True
         if user.find("span","Icon Icon--protected"):
             userdata['protected_tweets'] = True
 
-    userdata['screen_name'] = re.sub('\n\s*', '',
-                         user.find("b", "u-linkComplex-target").text)
-    userdata['url_user_home']=html.find("span","ProfileHeaderCard-urlText u-dir").find('a', 'u-textUserColor')['title']
     userdata['image'] =  html.find("img","ProfileAvatar-image")['src']
 
     infotweets=html.find("div","ProfileCanopy-nav").find("div","ProfileNav")
-    userdata['tweets'] = int(infotweets.find("li","ProfileNav-item ProfileNav-item--tweets is-active").find("span","ProfileNav-value")['data-count'])
+    userdata['tweets'] = int(infotweets.find("li","ProfileNav-item ProfileNav-item--tweets").find("span","ProfileNav-value")['data-count'])
     userdata['following'] = int(infotweets.find("li","ProfileNav-item ProfileNav-item--following").find("span","ProfileNav-value")['data-count'])
     userdata['followers'] = int(infotweets.find("li","ProfileNav-item ProfileNav-item--followers").find("span","ProfileNav-value")['data-count'])
     userdata['likes'] = int(infotweets.find("li","ProfileNav-item ProfileNav-item--favorites").find("span","ProfileNav-value")['data-count'])
     userdata['lists'] = int(infotweets.find("li","ProfileNav-item ProfileNav-item--lists").find("span","ProfileNav-value").text)
-    userdata['joined'] = user.find("div","ProfileHeaderCard-joinDate").find("span","ProfileHeaderCard-joinDateText js-tooltip u-dir")['title']
-    userdata['description'] = user.find("p","ProfileHeaderCard-bio u-dir").text
+
+
+    timeline = html.select('#timeline li.stream-item')
+    for tweet in timeline:
+        tweet_id = tweet['data-item-id']
+        tweet_text = tweet.select('p.tweet-text')[0].get_text()
+        all_tweets.append({"id": tweet_id, "text": tweet_text})
+        print(all_tweets)
+
 
 else:
+    # <div class="user-actions btn-group not-following protected" data-name="mac" data-protected="true" data-screen-name="macadanedhel" data-user-id="342209760">
     background_image=user.find("a", "ProfileCard-bg js-nav")['style'].split('(')[1].rstrip(');')
-    userdata['name']=user.find("b", "u-linkComplex-target").text
-    userdata['screen_name']=re.sub('\n\s*', '', user.find("a", "fullname ProfileNameTruncated-link u-textInheritColor js-nav").text)
+    # userdata['name']=user.find("b", "u-linkComplex-target").text
+    userdata['name']=html.find('div', 'user-actions btn-group not-following protected')['data-name']
+    # userdata['screen_name']=re.sub('\n\s*', '', user.find("a", "fullname ProfileNameTruncated-link u-textInheritColor js-nav").text)
+    userdata['screen_name'] = html.find('div', 'user-actions btn-group not-following protected')['data-screen-name']
+    #
+    userdata['_id'] = html.find('div', 'user-actions btn-group not-following protected')['data-user-id']
+
     userdata['url_user_home']=user.find("p", "ProfileCard-locationAndUrl").find("a","u-textUserColor")['title']
     userdata['image']=user.find("img","ProfileCard-avatarImage js-action-profile-avatar")['src']
     userdata['tweets']=user.find("span","ProfileCardStats-statValue").text

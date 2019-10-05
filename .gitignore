@@ -21,3 +21,4 @@ recipies/
 /recipe__make_twitter_request.py
 recipe__make_twitter_request.pyc
 *.pyc
+log/
